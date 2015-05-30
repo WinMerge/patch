@@ -1,0 +1,27 @@
+export INSTALL=/bin/install.exe -cpD
+export INSTALL_DATA=/bin/install.exe -cp
+export INSTALL_PROGRAM=/bin/install.exe -cpsD
+export ac_cv_prog_LN_S=cp -fp
+export cl_cv_prog_LN=cp -fp
+export CFLAGS= -O2 -fnative-struct -fno-rtti -fno-exceptions -mcpu=pentium -march=i386
+export LDFLAGS= -Wl,--enable-auto-import 
+export LIBS= -Wl,--enable-auto-import -liberty -lMsup -lMstubs
+
+.PHONY: all
+all:
+	./configure --prefix=c:/progra~1/patch --host=i386-pc-mingw32 --build=i386-pc-mingw32 --target=i386-pc-mingw32
+
+	if [ -e libtool ]; then \
+	cp -fp libtool libtool.orig; \
+	sed -e "s/~/!/" libtool.orig >libtool; \
+	fi
+
+#	if ! [ -e makefile.orig ]; then \
+#	cp -fp makefile makefile.orig; \
+#	fi
+#	sed -f makefile.sed makefile.orig >makefile
+
+#	make all
+#	make check
+#	make install prefix=c:/temp/ed
+                                 
