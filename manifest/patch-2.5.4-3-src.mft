@@ -1,5 +1,5 @@
-manifest/patch-2.5.4-2-src.mft
-manifest/patch-2.5.4-2-src.ver
+manifest/patch-2.5.4-3-src.mft
+manifest/patch-2.5.4-3-src.ver
 src/patch-2.5.4/aclocal.m4
 src/patch-2.5.4/addext.c
 src/patch-2.5.4/ansi2knr.1
