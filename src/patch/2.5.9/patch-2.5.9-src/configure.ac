@@ -64,9 +64,6 @@ gl_GETOPT
 gl_PREREQ_XMALLOC
 gl_QUOTE
 gl_QUOTEARG
-gl_HASH
-
-ag_CHECK_NANOSECOND_STAT
 
 dnl This should be in gnulib, but isn't for some reason.
 AC_DEFUN([jm_PREREQ_ADDEXT],

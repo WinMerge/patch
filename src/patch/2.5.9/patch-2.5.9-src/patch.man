@@ -517,6 +517,18 @@ instead of the default
 .B \&.rej
 file.
 .TP
+.BI \*=global\-reject\-file= rejectfile
+Put all rejects into
+.I rejectfile
+instead of creating separate reject files for all files that have rejects. The
+.I rejectfile
+will contain headers that identify which file each reject refers to. Note that
+the global reject file is created even if \-\-dry\-run is specified (while
+non-global reject files will only be created without \-\-dry\-run).
+.TP
+\fB\*=unified\-reject\-files\fP
+Produce unified reject files. The default is to produce context type reject files.
+.TP
 \fB\-R\fP  or  \fB\*=reverse\fP
 Assume that this patch was created with the old and new files swapped.
 (Yes, I'm afraid that does happen occasionally, human nature being what it

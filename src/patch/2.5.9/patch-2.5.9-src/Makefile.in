@@ -21,7 +21,7 @@
 #### Start of system configuration section. ####
 
 srcdir = @srcdir@
-resdir = @top_builddir@res
+resdir = @top_builddir@/resource
 VPATH = @srcdir@ @srcdir@/pc $(resdir)
 
 @SET_MAKE@
@@ -35,9 +35,9 @@ transform = @program_transform_name@
 
 CFLAGS = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@
-DEFS = -DINSTALLDIR=\"$(prefix)\"  -DINSTALLDIR=\"$(prefix)\"  -DINSTALLDIR=\"$(prefix)\"  -DINSTALLDIR=\"$(prefix)\"  @DEFS@
+DEFS = -DINSTALLDIR=\"$(prefix)\"  @DEFS@
 EXEEXT = @EXEEXT@
-LDFLAGS = @LDFLAGS@	-Wl,--major-image-version=$(MAJOR) -Wl,--minor-image-version=$(MINOR)
+LDFLAGS = @LDFLAGS@ $(VERSADD)
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 OBJEXT = @OBJEXT@
@@ -46,12 +46,7 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 VERSION = $(PACKAGE_VERSION)
 MAJOR=$(shell echo $(VERSION) | sed -e "s/\..*$$//")
 MINOR=$(shell echo $(VERSION) | sed -e "s/^[^\.]*\.0*\([^.]*\).*$$/\1/")
-MAJOR=$(shell echo $(VERSION) | sed -e "s/\..*$$//")
-MINOR=$(shell echo $(VERSION) | sed -e "s/^[^\.]*\.0*\([^.]*\).*$$/\1/")
-MAJOR=$(shell echo $(VERSION) | sed -e "s/\..*$$//")
-MINOR=$(shell echo $(VERSION) | sed -e "s/^[^\.]*\.0*\([^.]*\).*$$/\1/")
-MAJOR=$(shell echo $(VERSION) | sed -e "s/\\..*$$//")
-MINOR=$(shell echo $(VERSION) | sed -e "s/^[^\\.]*\\.0*\\([^.]*\\).*$$/\\1/")
+VERSADD = -Wl,--major-image-version=$(MAJOR) -Wl,--minor-image-version=$(MINOR)
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -88,8 +83,8 @@ OBJS = patch-res.o $(LIBOBJS) \
 	maketime.$(OBJEXT) partime.$(OBJEXT) \
 	patch.$(OBJEXT) pch.$(OBJEXT) \
 	quote.$(OBJEXT) quotearg.$(OBJEXT) quotesys.$(OBJEXT) \
-	util.$(OBJEXT) version.$(OBJEXT) xmalloc.$(OBJEXT) hash.$(OBJEXT) \
-	pc_quote.$(OBJEXT) rename.$(OBJEXT)
+	util.$(OBJEXT) version.$(OBJEXT) xmalloc.$(OBJEXT) \
+	hash.$(OBJEXT) pc_quote.$(OBJEXT) nonposix.$(OBJEXT)
 HDRS = argmatch.h backupfile.h common.h dirname.h \
 	error.h getopt.h gettext.h \
 	inp.h maketime.h partime.h pch.h \

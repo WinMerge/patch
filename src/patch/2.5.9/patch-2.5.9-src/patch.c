@@ -67,6 +67,7 @@ static bool similar (char const *, size_t, char const *, size_t);
 static bool spew_output (struct outstate *);
 static char const *make_temp (char);
 static int numeric_string (char const *, bool, char const *);
+static void reject_header (const char *filename);
 static void abort_hunk (void);
 static void cleanup (void);
 static void get_some_switches (void);
@@ -91,13 +92,14 @@ static LINENUM last_frozen_line;
 static char const *do_defines; /* symbol to patch using ifdef, ifndef, etc. */
 static char const if_defined[] = "\n#ifdef %s\n";
 static char const not_defined[] = "\n#ifndef %s\n";
-static char const else_defined[] = "\n#else\n";
-static char const end_defined[] = "\n#endif\n";
+static char const else_defined[] = "\n#else /* %s */\n";
+static char const end_defined[] = "\n#endif /* %s */\n";
 
 static int Argc;
 static char * const *Argv;
 
 static FILE *rejfp;  /* reject file pointer */
+static char *global_reject;
 
 static char const *patchname;
 static char *rejname;
@@ -172,6 +174,10 @@ main (int argc, char **argv)
     /* Make sure we clean up in case of disaster.  */
     set_signals (false);
 
+    /* initialize global reject file */
+    if (global_reject)
+      init_reject ();
+
     for (
 	open_patch_file (patchname);
 	there_is_another_patch();
@@ -208,8 +214,9 @@ main (int argc, char **argv)
 	    init_output (TMPOUTNAME, exclusive, &outstate);
 	  }
 
-	/* initialize reject file */
-	init_reject ();
+	/* initialize per-patch reject file */
+	if (!global_reject)
+	  init_reject ();
 
 	/* find out where all the lines are */
 	if (!skip_rest_of_patch)
@@ -278,6 +285,8 @@ main (int argc, char **argv)
 
 	    newwhere = pch_newfirst() + last_offset;
 	    if (skip_rest_of_patch) {
+		if (!failed)
+		  reject_header(outname);
 		abort_hunk();
 		failed++;
 		if (verbosity == VERBOSE)
@@ -292,6 +301,8 @@ main (int argc, char **argv)
 		  say ("Patch attempted to create file %s, which already exists.\n",
 		       quotearg (inname));
 
+		if (!failed)
+		  reject_header(outname);
 		abort_hunk();
 		failed++;
 		if (verbosity != SILENT)
@@ -299,6 +310,8 @@ main (int argc, char **argv)
 		       format_linenum (numbuf, newwhere));
 	    }
 	    else if (! apply_hunk (&outstate, where)) {
+		if (!failed)
+		  reject_header(outname);
 		abort_hunk ();
 		failed++;
 		if (verbosity != SILENT)
@@ -319,6 +332,7 @@ main (int argc, char **argv)
 		}
 	    }
 	}
+
 	if (!skip_rest_of_patch)
 	  {
 	    if (got_hunk < 0  &&  using_plan_a)
@@ -331,12 +345,13 @@ main (int argc, char **argv)
 		    fclose (outstate.ofp);
 		    outstate.ofp = 0;
 		  }
-		fclose (rejfp);
+		if (!global_reject)
+		  fclose (rejfp);
 		continue;
 	      }
 
 	    /* Finish spewing out the new file.  */
-		assert (hunk);
+	    assert (hunk);
 	    if (! spew_output (&outstate))
 	      {
 		say ("Skipping patch.\n");
@@ -411,13 +426,13 @@ main (int argc, char **argv)
 	    }
       }
       if (diff_type != ED_DIFF) {
-	if (fclose (rejfp) != 0)
+	if (!global_reject && fclose (rejfp) != 0)
 	    write_fatal ();
 	if (failed) {
 	    somefailed = true;
 	    say ("%d out of %d hunk%s %s", failed, hunk, "s" + (hunk == 1),
 		 skip_rest_of_patch ? "ignored" : "FAILED");
-	    if (outname) {
+	    if (!global_reject && outname) {
 		char *rej = rejname;
 		if (!rejname) {
 		    rej = xmalloc (strlen (outname) + 5);
@@ -429,7 +444,7 @@ main (int argc, char **argv)
 		  {
 		    move_file (TMPREJNAME, &TMPREJNAME_needs_removal,
 			       rej, instat.st_mode, false);
-		    if (! inerrno
+		    if (! inerrno && !s_is_chrblkfifosock(rej)
 			&& (chmod (rej, (instat.st_mode
 					 & ~(S_IXUSR|S_IXGRP|S_IXOTH)))
 			    != 0))
@@ -444,6 +459,20 @@ main (int argc, char **argv)
       }
       set_signals (true);
     }
+    if (global_reject)
+      {
+	if (fclose (rejfp) != 0)
+	  write_fatal ();
+	if (somefailed)
+	  {
+	  say (" -- saving rejects to file %s\n", quotearg (global_reject));
+	  /*if (! dry_run)
+	    {*/
+	      move_file (TMPREJNAME, &TMPREJNAME_needs_removal,
+			 global_reject, 0644, false);
+	    /*}*/
+	  }
+      }
     if (outstate.ofp && (ferror (outstate.ofp) || fclose (outstate.ofp) != 0))
       write_fatal ();
     cleanup ();
@@ -521,6 +550,8 @@ static struct option const longopts[] =
   {"no-backup-if-mismatch", no_argument, NULL, CHAR_MAX + 6},
   {"posix", no_argument, NULL, CHAR_MAX + 7},
   {"quoting-style", required_argument, NULL, CHAR_MAX + 8},
+  {"unified-reject-files", no_argument, NULL, CHAR_MAX + 9},
+  {"global-reject-file", required_argument, NULL, CHAR_MAX + 10},
   {NULL, no_argument, NULL, 0}
 };
 
@@ -579,6 +610,8 @@ static char const *const option_help[] =
 "  --verbose  Output extra information about the work being done.",
 "  --dry-run  Do not actually change any files; just print what would happen.",
 "  --posix  Conform to the POSIX standard.",
+"  --unified-reject-files  Create unified reject files.",
+"  --global-reject-file=file  Put all rejects into one file.",
 "",
 "  -d DIR  --directory=DIR  Change the working directory to DIR first.",
 #if HAVE_SETMODE_DOS
@@ -778,6 +811,12 @@ get_some_switches (void)
 				     (enum quoting_style) i);
 		}
 		break;
+	    case CHAR_MAX + 9:
+		unified_reject_files = true;
+		break;
+	    case CHAR_MAX + 10:
+		global_reject = savestr (optarg);
+		break;
 	    default:
 		usage (stderr, 2);
 	}
@@ -926,6 +965,55 @@ locate_hunk (LINENUM fuzz)
     return 0;
 }
 
+static char *
+format_timestamp (char timebuf[37], bool which)
+{
+  time_t ts = pch_timestamp(which);
+  if (ts != -1)
+    {
+      struct tm *tm = localtime(&ts);
+      strftime(timebuf, 37, "\t%Y-%m-%d %H:%M:%S.000000000 %z", tm);
+    }
+  else
+    timebuf[0] = 0;
+  return timebuf;
+}
+
+/* Write a header in a reject file that combines multiple hunks. */
+static void
+reject_header (const char *outname)
+{
+    char timebuf0[37], timebuf1[37];
+    if (!global_reject)
+      return;
+    if (diff_type == UNI_DIFF)
+   fprintf(rejfp, "--- %s.orig%s\n+++ %s%s\n",
+        outname, format_timestamp(timebuf0, reverse),
+        outname, format_timestamp(timebuf1, !reverse));
+    else
+   fprintf(rejfp, "*** %s.orig%s\n--- %s%s\n",
+        outname, format_timestamp(timebuf0, reverse),
+        outname, format_timestamp(timebuf1, !reverse));
+}
+
+static char *
+format_linerange (char rangebuf[LINENUM_LENGTH_BOUND*2 + 2],
+		  LINENUM first, LINENUM lines)
+{
+    if (lines == 1)
+      rangebuf = format_linenum (rangebuf, first);
+    else
+      {
+	char *rb;
+	rangebuf = format_linenum (rangebuf + LINENUM_LENGTH_BOUND + 1, lines);
+	rb = rangebuf-1;
+	rangebuf = format_linenum (rangebuf - LINENUM_LENGTH_BOUND - 1,
+				   (lines > 0) ? first : 0);
+	*rb = ',';
+      }
+    return rangebuf;
+}
+
 /* We did not find the pattern, dump out the hunk so they can handle it. */
 
 static void
@@ -942,8 +1030,83 @@ abort_hunk (void)
       (int) NEW_CONTEXT_DIFF <= (int) diff_type ? " ****" : "";
     char const *minuses =
       (int) NEW_CONTEXT_DIFF <= (int) diff_type ? " ----" : " -----";
+    char const *function = pch_c_function();
+    if (function == NULL)
+	function = "";
 
-    fprintf(rejfp, "***************\n");
+    if (unified_reject_files)
+      {
+	/* produce unified reject files */
+	char rangebuf0[LINENUM_LENGTH_BOUND*2 + 2];
+	char rangebuf1[LINENUM_LENGTH_BOUND*2 + 2];
+	LINENUM j;
+
+	/* Find the beginning of the remove and insert section. */
+	for (j = 0; j <= pat_end; j++)
+	  if (pch_char (j) == '=')
+	    break;
+	for (i = j+1; i <= pat_end; i++)
+	  if (pch_char (i) == '^')
+	    break;
+	if (pch_char (0) != '*' || j > pat_end || i > pat_end+1)
+	  fatal ("internal error in abort_hunk");
+	i = 1; j++;
+
+	/* @@ -from,lines +to,lines @@ */
+	fprintf (rejfp, "@@ -%s +%s @@%s\n",
+		 format_linerange (rangebuf0, oldfirst, pch_ptrn_lines()),
+		 format_linerange (rangebuf1, newfirst, pch_repl_lines()),
+		 function);
+
+	while (   (i <= pat_end && pch_char (i) != '=')
+	       || (j <= pat_end && pch_char (j) != '^'))
+	  {
+	    if (i <= pat_end
+		&& (pch_char (i) == '-' || pch_char (i) == '!'))
+	      {
+		fputc('-', rejfp);
+		pch_write_line (i++, rejfp);
+	      }
+	    else if (j <= pat_end
+		     && (pch_char (j) == '+' || pch_char (j) == '!'))
+	      {
+		fputc('+', rejfp);
+		pch_write_line (j++, rejfp);
+	      }
+	    else if ((i <= pat_end
+		      && (pch_char (i) == ' ' || pch_char (i) == '\n')) &&
+		     (j > pat_end
+		      || (pch_char (j) == ' ' || pch_char (j) == '\n')))
+	      {
+		/* Unless j is already past the end, lines i and j
+		   must be equal here.  */
+
+		if (pch_char (i) == ' ')
+		  fputc(' ', rejfp);
+		pch_write_line (i++, rejfp);
+		if (j <= pat_end)
+		  j++;
+	      }
+	    else if ((j <= pat_end &&
+		     (pch_char (j) == ' ' || pch_char (j) == '\n')) &&
+		     (pch_char (i) == '='))
+	      {
+		if (pch_char (j) == ' ')
+		  fputc(' ', rejfp);
+		pch_write_line (j++, rejfp);
+	      }
+	    else
+	      fatal ("internal error in abort_hunk");
+	  }
+
+	if (ferror (rejfp))
+	  write_fatal ();
+	return;
+      }
+
+    /* produce context type reject files */
+   
+    fprintf(rejfp, "***************%s\n", function);
     for (i=0; i<=pat_end; i++) {
 	char numbuf0[LINENUM_LENGTH_BOUND + 1];
 	char numbuf1[LINENUM_LENGTH_BOUND + 1];
@@ -1013,7 +1176,8 @@ apply_hunk (struct outstate *outstate, LINENUM where)
 		    def_state = IN_IFNDEF;
 		}
 		else if (def_state == IN_IFDEF) {
-		    fprintf (fp, outstate->after_newline + else_defined);
+		    fprintf (fp, outstate->after_newline + else_defined,
+		    	     R_do_defines);
 		    def_state = IN_ELSE;
 		}
 		if (ferror (fp))
@@ -1032,7 +1196,8 @@ apply_hunk (struct outstate *outstate, LINENUM where)
 		return false;
 	    if (R_do_defines) {
 		if (def_state == IN_IFNDEF) {
-		    fprintf (fp, outstate->after_newline + else_defined);
+		    fprintf (fp, outstate->after_newline + else_defined,
+		    	     R_do_defines);
 		    def_state = IN_ELSE;
 		}
 		else if (def_state == OUTSIDE) {
@@ -1080,7 +1245,8 @@ apply_hunk (struct outstate *outstate, LINENUM where)
 	    while (pch_char (old) == '!');
 
 	    if (R_do_defines) {
-		fprintf (fp, outstate->after_newline + else_defined);
+		fprintf (fp, outstate->after_newline + else_defined,
+			 R_do_defines);
 		if (ferror (fp))
 		  write_fatal ();
 		def_state = IN_ELSE;
@@ -1099,7 +1265,8 @@ apply_hunk (struct outstate *outstate, LINENUM where)
 	    old++;
 	    new++;
 	    if (R_do_defines && def_state != OUTSIDE) {
-		fprintf (fp, outstate->after_newline + end_defined);
+		fprintf (fp, outstate->after_newline + end_defined,
+			 R_do_defines);
 		if (ferror (fp))
 		  write_fatal ();
 		outstate->after_newline = true;
@@ -1117,7 +1284,8 @@ apply_hunk (struct outstate *outstate, LINENUM where)
 		def_state = IN_IFDEF;
 	    }
 	    else if (def_state == IN_IFNDEF) {
-		fprintf (fp, outstate->after_newline + else_defined);
+		fprintf (fp, outstate->after_newline + else_defined,
+			 R_do_defines);
 		def_state = IN_ELSE;
 	    }
 	    if (ferror (fp))
@@ -1136,7 +1304,8 @@ apply_hunk (struct outstate *outstate, LINENUM where)
 	while (new <= pat_end && pch_char (new) == '+');
     }
     if (R_do_defines && def_state != OUTSIDE) {
-	fprintf (fp, outstate->after_newline + end_defined);
+	fprintf (fp, outstate->after_newline + end_defined,
+		 R_do_defines);
 	if (ferror (fp))
 	  write_fatal ();
 	outstate->after_newline = true;

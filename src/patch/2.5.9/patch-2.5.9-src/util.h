@@ -57,3 +57,4 @@ void remove_prefix (char *, size_t);
 void removedirs (char *);
 void set_signals (bool);
 void write_fatal (void) __attribute__ ((noreturn));
+int s_is_chrblkfifosock (const char *);

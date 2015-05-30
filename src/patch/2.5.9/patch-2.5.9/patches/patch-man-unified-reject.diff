@@ -1,0 +1,11 @@
+--- patch-2.5.9/patch.man
++++ patch-2.5.9/patch.man
+@@ -517,7 +517,7 @@
+ .B \&.rej
+ file.
+ .TP
+-\fB\*=reject\-unified\fP
++\fB\*=unified\-reject\-files\fP
+ Produce unified reject files. The default is to produce context type reject files.
+ .TP
+ .BI \*=global\-reject\-file= rejectfile

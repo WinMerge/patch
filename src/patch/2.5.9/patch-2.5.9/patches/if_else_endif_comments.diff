@@ -1,0 +1,75 @@
+Index: patch-2.5.9/patch.c
+===================================================================
+--- patch-2.5.9.orig/patch.c	2003-06-05 00:22:56.000000000 +0200
++++ patch-2.5.9/patch.c	2003-06-05 00:23:16.000000000 +0200
+@@ -91,8 +91,8 @@ static LINENUM last_frozen_line;
+ static char const *do_defines; /* symbol to patch using ifdef, ifndef, etc. */
+ static char const if_defined[] = "\n#ifdef %s\n";
+ static char const not_defined[] = "\n#ifndef %s\n";
+-static char const else_defined[] = "\n#else\n";
+-static char const end_defined[] = "\n#endif\n";
++static char const else_defined[] = "\n#else /* %s */\n";
++static char const end_defined[] = "\n#endif /* %s */\n";
+ 
+ static int Argc;
+ static char * const *Argv;
+@@ -1097,7 +1097,8 @@ apply_hunk (struct outstate *outstate, L
+ 		    def_state = IN_IFNDEF;
+ 		}
+ 		else if (def_state == IN_IFDEF) {
+-		    fprintf (fp, outstate->after_newline + else_defined);
++		    fprintf (fp, outstate->after_newline + else_defined,
++		    	     R_do_defines);
+ 		    def_state = IN_ELSE;
+ 		}
+ 		if (ferror (fp))
+@@ -1116,7 +1117,8 @@ apply_hunk (struct outstate *outstate, L
+ 		return false;
+ 	    if (R_do_defines) {
+ 		if (def_state == IN_IFNDEF) {
+-		    fprintf (fp, outstate->after_newline + else_defined);
++		    fprintf (fp, outstate->after_newline + else_defined,
++		    	     R_do_defines);
+ 		    def_state = IN_ELSE;
+ 		}
+ 		else if (def_state == OUTSIDE) {
+@@ -1164,7 +1166,8 @@ apply_hunk (struct outstate *outstate, L
+ 	    while (pch_char (old) == '!');
+ 
+ 	    if (R_do_defines) {
+-		fprintf (fp, outstate->after_newline + else_defined);
++		fprintf (fp, outstate->after_newline + else_defined,
++			 R_do_defines);
+ 		if (ferror (fp))
+ 		  write_fatal ();
+ 		def_state = IN_ELSE;
+@@ -1183,7 +1186,8 @@ apply_hunk (struct outstate *outstate, L
+ 	    old++;
+ 	    new++;
+ 	    if (R_do_defines && def_state != OUTSIDE) {
+-		fprintf (fp, outstate->after_newline + end_defined);
++		fprintf (fp, outstate->after_newline + end_defined,
++			 R_do_defines);
+ 		if (ferror (fp))
+ 		  write_fatal ();
+ 		outstate->after_newline = true;
+@@ -1201,7 +1205,8 @@ apply_hunk (struct outstate *outstate, L
+ 		def_state = IN_IFDEF;
+ 	    }
+ 	    else if (def_state == IN_IFNDEF) {
+-		fprintf (fp, outstate->after_newline + else_defined);
++		fprintf (fp, outstate->after_newline + else_defined,
++			 R_do_defines);
+ 		def_state = IN_ELSE;
+ 	    }
+ 	    if (ferror (fp))
+@@ -1220,7 +1225,8 @@ apply_hunk (struct outstate *outstate, L
+ 	while (new <= pat_end && pch_char (new) == '+');
+     }
+     if (R_do_defines && def_state != OUTSIDE) {
+-	fprintf (fp, outstate->after_newline + end_defined);
++	fprintf (fp, outstate->after_newline + end_defined,
++		 R_do_defines);
+ 	if (ferror (fp))
+ 	  write_fatal ();
+ 	outstate->after_newline = true;

@@ -27,6 +27,7 @@
 #endif
 
 #include <config.h>
+#include "nonposix.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -35,13 +36,6 @@
 #include <time.h>
 
 #include <sys/stat.h>
-#ifdef _WIN32
-# define _stat	_stati64
-# define stat	_stati64
-# define _fstat	_fstati64
-# define fstat	_fstati64
-# define off_t	__int64
-#endif /* _WIN32 */
 #if ! defined S_ISDIR && defined S_IFDIR
 # define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
 #endif
@@ -153,6 +147,7 @@ XTERN int invc;
 XTERN struct stat instat;
 XTERN bool dry_run;
 XTERN bool posixly_correct;
+XTERN bool unified_reject_files;
 
 XTERN char const *origprae;
 XTERN char const *origbase;
@@ -244,16 +239,6 @@ void *realloc ();
 #ifndef STDERR_FILENO
 #define STDERR_FILENO 2
 #endif
-#ifdef __MINGW32__
-# define fseek fseeko64
-# define fseeko     fseeko64
-# define lseek _lseeki64
-# define lseek64 _lseeki64
-# define ftell ftello64
-# define ftell64 ftello64
-# define tell  _telli64
-# define tell64 _telli64
-#endif
 #if HAVE_FSEEKO
   typedef off_t file_offset;
 # define file_seek fseeko
@@ -306,28 +291,9 @@ void *realloc ();
 #endif
 
 #ifndef NULL_DEVICE
-#ifndef _WIN32
 #define NULL_DEVICE "/dev/null"
-#else
-#define NULL_DEVICE "NUL"
-#endif /* _WIN32 */
 #endif
 
 #ifndef TTY_DEVICE
-#ifndef _WIN32
 #define TTY_DEVICE "/dev/tty"
-#else
-#define TTY_DEVICE (_fileno(stdout))
-#endif /* _WIN32 */
 #endif
-
-#ifdef _WIN32
-# ifdef MKDIR_TAKES_ONE_ARG
-#  undefine MKDIR_TAKES_ONE_ARG
-# endif
-# ifdef mkdir
-#  undef mkdir
-# endif
-# define mkdir(name, mode) ((_mkdir) (name))
-# define rename(old,new) w32_rename(old,new)
-#endif /* _WIN32 */

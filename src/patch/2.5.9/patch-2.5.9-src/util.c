@@ -52,10 +52,6 @@
 #include <stdarg.h>
 #include <hash.h>
 
-#ifdef _WIN32
-#include <conio.h>
-#endif /* _WIN32 */
-
 static void makedirs (char *);
 static bool fid_search (const char *, const struct stat *, bool);
 # define fid_exists(name, pst) fid_search (name, pst, false)
@@ -68,6 +64,49 @@ static bool fid_search (const char *, const struct stat *, bool);
    If FROM is null, remove TO (ignoring FROMSTAT).
    FROM_NEEDS_REMOVAL must be nonnull if FROM is nonnull.
    Back up TO if BACKUP is true.  */
+
+int
+s_is_chrblkfifosock (const char *path)
+{
+  int r;
+  struct stat st;
+
+  r = stat(path, &st);
+  if (r < 0)
+    return r;
+
+  return (((st.st_mode & S_IFMT) == S_IFCHR) ||
+	  ((st.st_mode & S_IFMT) == S_IFBLK) ||
+	  ((st.st_mode & S_IFMT) == S_IFIFO) ||
+	  ((st.st_mode & S_IFMT) == S_IFSOCK));
+}
+
+void
+cat_file_to_dev (const char *from, const char *to)
+{
+  size_t i;
+  int fromfd, tofd;
+
+  fromfd = open(from, O_RDONLY);
+  if (fromfd < 0)
+    pfatal("could not open %s for reading", quotearg(from));
+
+  tofd = open(to, O_WRONLY | O_NONBLOCK);
+  if (tofd < 0)
+    pfatal("could not open %s for writing", quotearg(to));
+
+  while ((i = read (fromfd, buf, bufsize)) != 0)
+    {
+      if (i == (size_t) -1)
+	read_fatal ();
+      if (write (tofd, buf, i) != i)
+	write_fatal ();
+    }
+  if (close (fromfd) != 0)
+    read_fatal ();
+  if (close (tofd) != 0)
+    write_fatal ();
+}
 
 void
 move_file (char const *from, int volatile *from_needs_removal,
@@ -135,6 +174,7 @@ move_file (char const *from, int volatile *from_needs_removal,
 		 quotearg_n (0, to), quotearg_n (1, bakname));
 	  while (rename (to, bakname) != 0)
 	    {
+	      /* FIXME: copy if errno == EXDEV */
 	      if (errno != try_makedirs_errno)
 		pfatal ("Can't rename file %s to %s",
 			quotearg_n (0, to), quotearg_n (1, bakname));
@@ -145,6 +185,8 @@ move_file (char const *from, int volatile *from_needs_removal,
 
       free (bakname);
     }
+  else
+    backup = false;
 
   if (from)
     {
@@ -165,6 +207,15 @@ move_file (char const *from, int volatile *from_needs_removal,
 		goto rename_succeeded;
 	    }
 
+	  if (errno == EACCES && (s_is_chrblkfifosock(to) > 0))
+	    {
+	      cat_file_to_dev (from, to);
+	      if (backup)
+	        insert_fid (to);
+	      unlink(from);
+	      return;
+	    }
+
 	  if (errno == EXDEV)
 	    {
 	      if (! backup)
@@ -177,7 +228,8 @@ move_file (char const *from, int volatile *from_needs_removal,
 	      if (! to_dir_known_to_exist)
 		makedirs (to);
 	      copy_file (from, to, 0, mode);
-	      insert_fid (to);
+	      if (backup)
+		insert_fid (to);
 	      return;
 	    }
 
@@ -186,7 +238,8 @@ move_file (char const *from, int volatile *from_needs_removal,
 	}
 
     rename_succeeded:
-      insert_fid (to);
+      if (backup)
+	insert_fid (to);
       /* Do not clear *FROM_NEEDS_REMOVAL if it's possible that the
 	 rename returned zero because FROM and TO are hard links to
 	 the same file.  */
@@ -595,12 +648,7 @@ ask (char const *format, ...)
 	 POSIX.1-2001 XCU line 26599 requires that we read /dev/tty,
 	 though.  */
       ttyfd = (posixly_correct || isatty (STDOUT_FILENO)
-#ifndef _WIN32
 	       ? open (TTY_DEVICE, O_RDONLY)
-#else /* _WIN32 */
-			? _fileno(stderr)
-#endif /* _WIN32 */
-
 	       : -1);
     }
 
@@ -614,7 +662,6 @@ ask (char const *format, ...)
   else
     {
       size_t s = 0;
-#ifndef _WIN32
       while ((r = read (ttyfd, buf + s, bufsize - 1 - s)) == bufsize - 1 - s
 	     && buf[bufsize - 2] != '\n')
 	{
@@ -624,20 +671,6 @@ ask (char const *format, ...)
 	  if (!buf)
 	    memory_fatal ();
 	}
-#else /* _WIN32 */
-	{
-#define MAXTTYLINE 255
-	  char wbuf[MAXTTYLINE]={MAXTTYLINE};
-	  char *result;
-	  if (!buf)
-	    memory_fatal ();
-	  result = _cgets(wbuf);
-	  r = wbuf[1];
-	  if (bufsize < r)
-		  buf = realloc (buf, r+1);
-	  strcpy(buf, result);
-	}	  
-#endif /* _WIN32 */
       if (r == 0)
 	printf ("EOF\n");
       else if (r < 0)

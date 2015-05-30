@@ -1,0 +1,92 @@
+Index: patch-2.5.9/patch.c
+===================================================================
+--- patch-2.5.9.orig/patch.c
++++ patch-2.5.9/patch.c
+@@ -444,7 +444,7 @@ main (int argc, char **argv)
+ 		  {
+ 		    move_file (TMPREJNAME, &TMPREJNAME_needs_removal,
+ 			       rej, instat.st_mode, false);
+-		    if (! inerrno
++		    if (! inerrno && !s_is_chrblkfifosock(rej)
+ 			&& (chmod (rej, (instat.st_mode
+ 					 & ~(S_IXUSR|S_IXGRP|S_IXOTH)))
+ 			    != 0))
+Index: patch-2.5.9/util.c
+===================================================================
+--- patch-2.5.9.orig/util.c
++++ patch-2.5.9/util.c
+@@ -65,6 +65,49 @@ static bool fid_search (const char *, co
+    FROM_NEEDS_REMOVAL must be nonnull if FROM is nonnull.
+    Back up TO if BACKUP is true.  */
+ 
++int
++s_is_chrblkfifosock (const char *path)
++{
++  int r;
++  struct stat st;
++
++  r = stat(path, &st);
++  if (r < 0)
++    return r;
++
++  return (((st.st_mode & S_IFMT) == S_IFCHR) ||
++	  ((st.st_mode & S_IFMT) == S_IFBLK) ||
++	  ((st.st_mode & S_IFMT) == S_IFIFO) ||
++	  ((st.st_mode & S_IFMT) == S_IFSOCK));
++}
++
++void
++cat_file_to_dev (const char *from, const char *to)
++{
++  size_t i;
++  int fromfd, tofd;
++
++  fromfd = open(from, O_RDONLY);
++  if (fromfd < 0)
++    pfatal("could not open %s for reading", quotearg(from));
++
++  tofd = open(to, O_WRONLY | O_NONBLOCK);
++  if (tofd < 0)
++    pfatal("could not open %s for writing", quotearg(to));
++
++  while ((i = read (fromfd, buf, bufsize)) != 0)
++    {
++      if (i == (size_t) -1)
++	read_fatal ();
++      if (write (tofd, buf, i) != i)
++	write_fatal ();
++    }
++  if (close (fromfd) != 0)
++    read_fatal ();
++  if (close (tofd) != 0)
++    write_fatal ();
++}
++
+ void
+ move_file (char const *from, int volatile *from_needs_removal,
+ 	   char *to, mode_t mode, bool backup)
+@@ -164,6 +207,15 @@ move_file (char const *from, int volatil
+ 		goto rename_succeeded;
+ 	    }
+ 
++	  if (errno == EACCES && (s_is_chrblkfifosock(to) > 0))
++	    {
++	      cat_file_to_dev (from, to);
++	      if (backup)
++	        insert_fid (to);
++	      unlink(from);
++	      return;
++	    }
++
+ 	  if (errno == EXDEV)
+ 	    {
+ 	      if (! backup)
+Index: patch-2.5.9/util.h
+===================================================================
+--- patch-2.5.9.orig/util.h
++++ patch-2.5.9/util.h
+@@ -57,3 +57,4 @@ void remove_prefix (char *, size_t);
+ void removedirs (char *);
+ void set_signals (bool);
+ void write_fatal (void) __attribute__ ((noreturn));
++int s_is_chrblkfifosock (const char *);

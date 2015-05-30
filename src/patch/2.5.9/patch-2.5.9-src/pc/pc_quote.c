@@ -19,6 +19,8 @@
 # include <config.h>
 #endif
 
+#include "nonposix.h"
+
 #if HAVE_STDLIB_H
 # include <stdlib.h>
 #else

@@ -68,6 +68,7 @@ static LINENUM p_sline;			/* and the line number for it */
 static LINENUM p_hunk_beg;		/* line number of current hunk */
 static LINENUM p_efake = -1;		/* end of faked up lines--don't free */
 static LINENUM p_bfake = -1;		/* beg of faked up lines */
+static char *p_c_function;		/* the C function a hunk is in */
 
 enum nametype { OLD, NEW, INDEX, NONE };
 
@@ -121,7 +122,7 @@ open_patch_file (char const *filename)
 	  pfatal ("fstat");
 	if (S_ISREG (st.st_mode) && (stdin_pos = file_tell (stdin)) != -1)
 	  {
-		pfp = stdin;
+	    pfp = stdin;
 	    file_pos = stdin_pos;
 	  }
 	else
@@ -136,8 +137,8 @@ open_patch_file (char const *filename)
 	    if (!pfp)
 	      pfatal ("Can't open stream for file %s", quotearg (TMPPATNAME));
 	    for (st.st_size = 0;
-	   (charsread = fread (buf, 1, bufsize, stdin)) != 0;
-	   st.st_size += charsread)
+		 (charsread = fread (buf, 1, bufsize, stdin)) != 0;
+		 st.st_size += charsread)
 	      if (fwrite (buf, 1, charsread, pfp) != charsread)
 		write_fatal ();
 	    if (ferror (stdin) || fclose (stdin) != 0)
@@ -155,7 +156,7 @@ open_patch_file (char const *filename)
 	if (fstat (fileno (pfp), &st) != 0)
 	  pfatal ("fstat");
       }
-	p_filesize = st.st_size;
+    p_filesize = st.st_size;
     if (p_filesize != (file_offset) p_filesize)
       fatal ("patch file is too long");
     next_intuit_at (file_pos, (LINENUM) 1);
@@ -888,6 +889,19 @@ another_hunk (enum diff difftype, bool rev)
 	    next_intuit_at(line_beginning,p_input_line);
 	    return chars_read == (size_t) -1 ? -1 : 0;
 	}
+	s = buf;
+	while (*s == '*')
+	    s++;
+	if (*s == ' ')
+	  {
+	    p_c_function = s;
+	    while (*s != '\n')
+		s++;
+	    *s = '\0';
+	    p_c_function = savestr (p_c_function);
+	  }
+	else
+	    p_c_function = NULL;
 	p_hunk_beg = p_input_line + 1;
 	while (p_end < p_max) {
 	    chars_read = get_line ();
@@ -1277,8 +1291,18 @@ another_hunk (enum diff difftype, bool rev)
 	else
 	    p_repl_lines = 1;
 	if (*s == ' ') s++;
-	if (*s != '@')
+	if (*s++ != '@')
 	    malformed ();
+	if (*s++ == '@' && *s == ' ' && *s != '\0')
+	  {
+	    p_c_function = s;
+	    while (*s != '\n')
+		s++;
+	    *s = '\0';
+	    p_c_function = savestr (p_c_function);
+	  }
+	else
+	    p_c_function = NULL;
 	if (!p_ptrn_lines)
 	    p_first++;			/* do append rather than insert */
 	if (!p_repl_lines)
@@ -1512,7 +1536,7 @@ another_hunk (enum diff difftype, bool rev)
 	    p_Char[i] = '+';
 	}
     }
-	if (rev)				/* backwards patch? */
+    if (rev)				/* backwards patch? */
 	if (!pch_swap())
 	    say ("Not enough memory to swap next hunk!\n");
     if (debug & 2) {
@@ -1882,6 +1906,12 @@ LINENUM
 pch_hunk_beg (void)
 {
     return p_hunk_beg;
+}
+
+char const *
+pch_c_function (void)
+{
+    return p_c_function;
 }
 
 /* Is the newline-terminated line a valid `ed' command for patch
