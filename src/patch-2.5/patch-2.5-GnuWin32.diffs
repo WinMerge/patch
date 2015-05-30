@@ -1,0 +1,163 @@
+diff -cr -x config.log -x config.status -x config.cache -x '*.Po' -x '*.pot' -I 'patch-2.5-orig*' patch-2.5-orig/common.h patch-2.5/common.h
+*** patch-2.5-orig/common.h	Fri Jun 13 08:28:38 1997
+--- patch-2.5/common.h	Sat Jul 26 13:24:12 2003
+***************
+*** 303,307 ****
+--- 303,311 ----
+  #endif
+  
+  #ifndef TTY_DEVICE
++ #ifndef __WIN32__
+  #define TTY_DEVICE "/dev/tty"
++ #else
++ #define TTY_DEVICE (_fileno(stdout))
++ #endif /* __WIN32_ */
+  #endif
+diff -cr -x config.log -x config.status -x config.cache -x '*.Po' -x '*.pot' -I 'patch-2.5-orig*' patch-2.5-orig/patch.c patch-2.5/patch.c
+*** patch-2.5-orig/patch.c	Sat Jul  5 12:32:24 1997
+--- patch-2.5/patch.c	Sat Jul 26 19:00:29 2003
+***************
+*** 1098,1104 ****
+    int fd = create_file (name, O_WRONLY | binary_transput, instat.st_mode);
+    FILE *f = fdopen (fd, binary_transput ? "wb" : "w");
+    if (! f)
+!     pfatal ("can't create `%s'", name);
+    return f;
+  }
+  
+--- 1098,1104 ----
+    int fd = create_file (name, O_WRONLY | binary_transput, instat.st_mode);
+    FILE *f = fdopen (fd, binary_transput ? "wb" : "w");
+    if (! f)
+!     pfatal ("create_output_file: can't create `%s'", name);
+    return f;
+  }
+  
+***************
+*** 1252,1258 ****
+  #endif
+  
+  #ifndef TMPDIR
+! #define TMPDIR "/tmp"
+  #endif
+  
+  static char const *
+--- 1252,1262 ----
+  #endif
+  
+  #ifndef TMPDIR
+! # ifdef __WIN32__
+! # define TMPDIR "."
+! # else /* __WIN32__ */
+! # define TMPDIR "/tmp"
+! # endif  /* __WIN32__ */
+  #endif
+  
+  static char const *
+diff -cr -x config.log -x config.status -x config.cache -x '*.Po' -x '*.pot' -I 'patch-2.5-orig*' patch-2.5-orig/util.c patch-2.5/util.c
+*** patch-2.5-orig/util.c	Thu Jul 10 10:16:12 1997
+--- patch-2.5/util.c	Sat Jul 26 14:18:06 2003
+***************
+*** 124,135 ****
+  	  while ((fd = creat (bakname, 0)) < 0)
+  	    {
+  	      if (errno != try_makedirs_errno)
+! 		pfatal ("can't create file `%s'", bakname);
+  	      makedirs (bakname);
+  	      try_makedirs_errno = 0;
+  	    }
+  	  if (close (fd) != 0)
+! 	    pfatal ("can't close `%s'", bakname);
+  	}
+        else
+  	{
+--- 124,135 ----
+  	  while ((fd = creat (bakname, 0)) < 0)
+  	    {
+  	      if (errno != try_makedirs_errno)
+! 		pfatal ("move_file: can't create file `%s'", bakname);
+  	      makedirs (bakname);
+  	      try_makedirs_errno = 0;
+  	    }
+  	  if (close (fd) != 0)
+! 	    pfatal ("move_file: can't close `%s'", bakname);
+  	}
+        else
+  	{
+***************
+*** 210,220 ****
+    int fd;
+    mode |= S_IRUSR | S_IWUSR;
+    mode &= ~ (S_IXUSR | S_IXGRP | S_IXOTH);
+    if (! (O_CREAT && O_TRUNC))
+      close (creat (file, mode));
+!   fd = open (file, O_CREAT | O_TRUNC | open_flags, mode);
+    if (fd < 0)
+!     pfatal ("can't create `%s'", file);
+    return fd;
+  }
+  
+--- 210,222 ----
+    int fd;
+    mode |= S_IRUSR | S_IWUSR;
+    mode &= ~ (S_IXUSR | S_IXGRP | S_IXOTH);
++   mode = _S_IREAD | _S_IWRITE; 
+    if (! (O_CREAT && O_TRUNC))
+      close (creat (file, mode));
+! //  fd = open (file, O_CREAT | O_TRUNC | open_flags, mode);
+!   fd = open (file, O_CREAT | open_flags, mode);
+    if (fd < 0)
+!     pfatal ("create_file: can't create `%s'", file);
+    return fd;
+  }
+  
+***************
+*** 581,587 ****
+  	 which makes a call-process `patch' hang when it reads from /dev/tty.
+  	 POSIX.2 requires that we read /dev/tty, though.  */
+        ttyfd = (posixly_correct || isatty (STDOUT_FILENO)
+! 	       ? open (TTY_DEVICE, O_RDONLY)
+  	       : -1);
+      }
+  
+--- 583,594 ----
+  	 which makes a call-process `patch' hang when it reads from /dev/tty.
+  	 POSIX.2 requires that we read /dev/tty, though.  */
+        ttyfd = (posixly_correct || isatty (STDOUT_FILENO)
+! #ifndef __WIN32__
+! 			? open (TTY_DEVICE, O_RDONLY)
+! #else /* __WIN32__ */
+! 			? _fileno(stdout)
+! #endif /* __WIN32__ */
+! 
+  	       : -1);
+      }
+  
+***************
+*** 595,600 ****
+--- 602,608 ----
+    else
+      {
+        size_t s = 0;
++ #ifndef __WIN32__
+        while ((r = read (ttyfd, buf + s, bufsize - 1 - s)) == bufsize - 1 - s
+  	     && buf[bufsize - 2] != '\n')
+  	{
+***************
+*** 604,609 ****
+--- 612,626 ----
+  	  if (!buf)
+  	    memory_fatal ();
+  	}
++ #else /* __WIN32__ */
++ 	{
++ 	  char wbuf[80]={80};
++ 	  _cgets(wbuf);
++ 	  r = wbuf[1];
++ 	  buf = realloc(buf, r+2);
++ 	  strcpy(buf, &wbuf[2]);
++ 	}	  
++ #endif /* __WIN32__ */
+        if (r == 0)
+  	printf ("EOF\n");
+        else if (r < 0)

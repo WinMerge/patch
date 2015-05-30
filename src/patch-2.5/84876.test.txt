@@ -1,0 +1,40 @@
+Index: Bugzilla.pm
+===================================================================
+RCS file: /cvsroot/mozilla/webtools/bugzilla/Bugzilla.pm,v
+retrieving revision 1.8
+diff -u -r1.8 Bugzilla.pm
+--- Bugzilla.pm	7 Jun 2003 13:59:24 -0000	1.8
++++ Bugzilla.pm	12 Jul 2003 09:06:56 -0000
+@@ -39,6 +39,21 @@
+     return $_template;
+ }
+
++##
++## We need a separate TT instance because process() isn't reentrant; it turns
++## out that for bugactivity pages, since we send mail from a template now
++## (see bug 124174) using the same TT instance causes the process() handling
++## the generation of email to step on the previously called process() handling
++## the generation of the webpage; this fixes that.
++##
++
++my $_mail_template;
++sub mail_template {
++    my $class = shift;
++    $_mail_template ||= Bugzilla::Template->create();
++    return $_mail_template;
++}
++
+ my $_cgi;
+ sub cgi {
+     my $class = shift;
+@@ -246,6 +261,10 @@
+ =item C<template>
+
+ The current C<Template> object, to be used for output
++
++=item C<mail_template>
++
++The current C<Template> object, to be used for email output ONLY!
+
+ =item C<cgi>
+

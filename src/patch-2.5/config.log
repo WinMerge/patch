@@ -1,0 +1,186 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:551: checking for gcc
+configure:628: checking whether the C compiler (gcc  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386   -Wl,-s -Wl,--enable-auto-import ) works
+configure:642: gcc -o conftest  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64       -Wl,-s -Wl,--enable-auto-import  conftest.c  -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  1>&5
+configure:639: warning: return type defaults to `int'
+configure:662: checking whether the C compiler (gcc  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386   -Wl,-s -Wl,--enable-auto-import ) is a cross-compiler
+configure:667: checking whether we are using GNU C
+configure:676: gcc -E conftest.c
+configure:691: checking whether gcc accepts -g
+configure:719: checking how to run the C preprocessor
+configure:740: gcc -E   -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64      conftest.c >/dev/null 2>conftest.out
+configure:809: checking for a BSD compatible install
+configure:859: checking whether make sets ${MAKE}
+configure:890: checking for ed
+configure:923: checking whether large file support needs explicit enabling
+configure:954: checking for AIX
+configure:979: checking for minix/config.h
+configure:989: gcc -E   -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64      conftest.c >/dev/null 2>conftest.out
+configure:985:26: minix/config.h: No such file or directory
+configure: failed program was:
+#line 984 "configure"
+#include "confdefs.h"
+#include <minix/config.h>
+configure:1027: checking for POSIXized ISC
+configure:1049: checking for working const
+configure:1103: gcc -c  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64      conftest.c 1>&5
+configure: In function `main':
+configure:1077: warning: unused variable `s'
+configure:1097: warning: unused variable `foo'
+configure:1059: warning: unused variable `x'
+configure:1065: warning: unused variable `zero'
+configure:1076: warning: `t' might be used uninitialized in this function
+configure:1094: warning: `b' might be used uninitialized in this function
+configure:1129: checking for dirent.h that defines DIR
+configure:1142: gcc -c  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64      conftest.c 1>&5
+configure: In function `main':
+configure:1138: warning: unused variable `dirp'
+configure:1167: checking for opendir in -ldir
+configure:1186: gcc -o conftest  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64       -Wl,-s -Wl,--enable-auto-import  conftest.c -ldir   -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  1>&5
+configure:1250: checking for ANSI C header files
+configure:1263: gcc -E   -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64      conftest.c >/dev/null 2>conftest.out
+configure:1330: gcc -o conftest  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64       -Wl,-s -Wl,--enable-auto-import  conftest.c  -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  -ldir 1>&5
+configure: In function `main':
+configure:1325: warning: implicit declaration of function `exit'
+configure:1357: checking for fcntl.h
+configure:1367: gcc -E   -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64      conftest.c >/dev/null 2>conftest.out
+configure:1357: checking for limits.h
+configure:1367: gcc -E   -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64      conftest.c >/dev/null 2>conftest.out
+configure:1357: checking for string.h
+configure:1367: gcc -E   -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64      conftest.c >/dev/null 2>conftest.out
+configure:1357: checking for unistd.h
+configure:1367: gcc -E   -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64      conftest.c >/dev/null 2>conftest.out
+configure:1357: checking for utime.h
+configure:1367: gcc -E   -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64      conftest.c >/dev/null 2>conftest.out
+configure:1357: checking for varargs.h
+configure:1367: gcc -E   -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64      conftest.c >/dev/null 2>conftest.out
+configure:1395: checking for mode_t
+configure:1428: checking for off_t
+configure:1461: checking return type of signal handlers
+configure:1483: gcc -c  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64      conftest.c 1>&5
+configure: In function `main':
+configure:1479: warning: unused variable `i'
+configure:1502: checking for size_t
+configure:1536: checking for struct utimbuf
+configure:1551: gcc -c  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64      conftest.c 1>&5
+configure:1573: checking for working memchr
+configure:1587: gcc -o conftest  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64       -Wl,-s -Wl,--enable-auto-import  conftest.c  -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  -ldir 1>&5
+configure:1584: warning: return type defaults to `int'
+configure: In function `main':
+configure:1584: warning: implicit declaration of function `exit'
+configure:1609: checking for getopt_long
+configure:1637: gcc -o conftest  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64       -Wl,-s -Wl,--enable-auto-import  conftest.c  -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  -ldir 1>&5
+configure:1661: checking for _doprintf
+configure:1689: gcc -o conftest  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64       -Wl,-s -Wl,--enable-auto-import  conftest.c  -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  -ldir 1>&5
+m:\temp/ccOUbaaa.o(.text+0x16):conftest.c: undefined reference to `_doprintf'
+configure: failed program was:
+#line 1666 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char _doprintf(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char _doprintf();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub__doprintf) || defined (__stub____doprintf)
+choke me
+#else
+_doprintf();
+#endif
+
+; return 0; }
+configure:1661: checking for isascii
+configure:1689: gcc -o conftest  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64       -Wl,-s -Wl,--enable-auto-import  conftest.c  -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  -ldir 1>&5
+configure:1661: checking for memcmp
+configure:1689: gcc -o conftest  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64       -Wl,-s -Wl,--enable-auto-import  conftest.c  -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  -ldir 1>&5
+configure:1673: warning: conflicting types for built-in function `memcmp'
+configure:1661: checking for mkdir
+configure:1689: gcc -o conftest  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64       -Wl,-s -Wl,--enable-auto-import  conftest.c  -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  -ldir 1>&5
+configure:1661: checking for mktemp
+configure:1689: gcc -o conftest  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64       -Wl,-s -Wl,--enable-auto-import  conftest.c  -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  -ldir 1>&5
+configure:1661: checking for pathconf
+configure:1689: gcc -o conftest  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64       -Wl,-s -Wl,--enable-auto-import  conftest.c  -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  -ldir 1>&5
+configure:1661: checking for raise
+configure:1689: gcc -o conftest  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64       -Wl,-s -Wl,--enable-auto-import  conftest.c  -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  -ldir 1>&5
+configure:1661: checking for sigaction
+configure:1689: gcc -o conftest  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64       -Wl,-s -Wl,--enable-auto-import  conftest.c  -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  -ldir 1>&5
+m:\temp/ccIRbaaa.o(.text+0x16):conftest.c: undefined reference to `sigaction'
+configure: failed program was:
+#line 1666 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char sigaction(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char sigaction();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_sigaction) || defined (__stub___sigaction)
+choke me
+#else
+sigaction();
+#endif
+
+; return 0; }
+configure:1661: checking for sigprocmask
+configure:1689: gcc -o conftest  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64       -Wl,-s -Wl,--enable-auto-import  conftest.c  -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  -ldir 1>&5
+configure:1661: checking for sigsetmask
+configure:1689: gcc -o conftest  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64       -Wl,-s -Wl,--enable-auto-import  conftest.c  -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  -ldir 1>&5
+m:\temp/ccSoaaaa.o(.text+0x16):conftest.c: undefined reference to `sigsetmask'
+configure: failed program was:
+#line 1666 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char sigsetmask(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char sigsetmask();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_sigsetmask) || defined (__stub___sigsetmask)
+choke me
+#else
+sigsetmask();
+#endif
+
+; return 0; }
+configure:1716: checking for memchr
+configure:1716: checking for rename
+configure:1744: gcc -o conftest  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64       -Wl,-s -Wl,--enable-auto-import  conftest.c  -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  -ldir 1>&5
+configure:1771: checking whether closedir returns void
+configure:1785: gcc -o conftest  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64       -Wl,-s -Wl,--enable-auto-import  conftest.c  -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  -ldir 1>&5
+configure:1782: warning: return type defaults to `int'
+configure: In function `main':
+configure:1782: warning: implicit declaration of function `exit'
+configure: failed program was:
+#line 1779 "configure"
+#include "confdefs.h"
+#include <sys/types.h>
+#include <dirent.h>
+int closedir(); main() { exit(closedir(opendir(".")) != 0); }
+configure:1808: checking for vprintf
+configure:1836: gcc -o conftest  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64       -Wl,-s -Wl,--enable-auto-import  conftest.c  -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  -ldir 1>&5
+configure:1914: checking for long file names
+configure:1959: checking for d_ino member in directory struct
+configure:1987: gcc -o conftest  -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386    -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64       -Wl,-s -Wl,--enable-auto-import  conftest.c  -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  -ldir 1>&5
