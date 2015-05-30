@@ -364,8 +364,6 @@
 
 /* Define to `unsigned' if <sys/types.h> does not define. */
 /* #undef size_t */
-
-
 /* DJGPP-specific definitions */
 
 #define HAVE_DOS_FILE_NAMES 1

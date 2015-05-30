@@ -110,6 +110,14 @@ char *malloc ();
 #include "backupfile.h"
 #include "dirname.h"
 
+#ifndef HAVE_DOS_FILE_NAMES
+# define HAVE_DOS_FILE_NAMES 0
+#endif
+
+#ifndef filename_char_eq
+# define filename_char_eq(c1,c2)  ((c1) == (c2))
+#endif
+
 /* The extension added to file names to produce a simple (as opposed
    to numbered) backup file name. */
 const char *simple_backup_suffix = "~";

@@ -52,6 +52,10 @@
 #include <stdarg.h>
 #include <hash.h>
 
+#ifdef _WIN32
+#include <conio.h>
+#endif /* _WIN32 */
+
 static void makedirs (char *);
 static bool fid_search (const char *, const struct stat *, bool);
 # define fid_exists(name, pst) fid_search (name, pst, false)
@@ -594,7 +598,7 @@ ask (char const *format, ...)
 #ifndef _WIN32
 	       ? open (TTY_DEVICE, O_RDONLY)
 #else /* _WIN32 */
-			? _fileno(stdout)
+			? _fileno(stderr)
 #endif /* _WIN32 */
 
 	       : -1);
@@ -622,11 +626,16 @@ ask (char const *format, ...)
 	}
 #else /* _WIN32 */
 	{
-	  char wbuf[80]={80};
-	  _cgets(wbuf);
+#define MAXTTYLINE 255
+	  char wbuf[MAXTTYLINE]={MAXTTYLINE};
+	  char *result;
+	  if (!buf)
+	    memory_fatal ();
+	  result = _cgets(wbuf);
 	  r = wbuf[1];
-	  buf = realloc(buf, r+2);
-	  strcpy(buf, &wbuf[2]);
+	  if (bufsize < r)
+		  buf = realloc (buf, r+1);
+	  strcpy(buf, result);
 	}	  
 #endif /* _WIN32 */
       if (r == 0)

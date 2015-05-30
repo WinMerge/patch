@@ -34,17 +34,21 @@ INSTALL_PROGRAM = /bin/install.exe -cp
 INSTALL_DATA = /bin/install.exe -cp
 transform = s,$$,,;s,^,,;s/i386-pc-mingw32//
 
-CFLAGS =  -Wall -O3 -fms-extensions -mms-bitfields  -fno-exceptions -fomit-frame-pointer -march=i386 -mcpu=i686  
-CPPFLAGS =   -D__GW32__ -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64     -idirafter e:/progra~1/gnuwin32/include -idirafter h:/glibc/include   
-DEFS = -DINSTALLDIR=\"$(prefix)\"  -DINSTALLDIR=\"$(prefix)\"  -DHAVE_CONFIG_H
+CFLAGS =  -Wall -O3 -fms-extensions -mms-bitfields -fno-exceptions -fomit-frame-pointer -march=i386 -mcpu=i686 -ffast-math  
+CPPFLAGS =   -D__GW32__ -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64     -idirafter D:/Progra~1/GnuWin32/include -idirafter g:/glibc/include   
+DEFS = -DINSTALLDIR=\"$(prefix)\"  -DINSTALLDIR=\"$(prefix)\"  -DINSTALLDIR=\"$(prefix)\"  -DINSTALLDIR=\"$(prefix)\"  -DHAVE_CONFIG_H
 EXEEXT = .exe
-LDFLAGS =  -Wl,-s -Wl,--force-exe-suffix -Wl,--enable-auto-import -Wl,--enable-runtime-pseudo-reloc -Wl,--allow-multiple-definition  	-Wl,--major-image-version=$(MAJOR) -Wl,--minor-image-version=$(MINOR)
+LDFLAGS =  -Wl,-s -Wl,--force-exe-suffix -Wl,--enable-auto-import -Wl,--enable-runtime-pseudo-reloc -Wl,--allow-multiple-definition -Wl,--enable-stdcall-fixup -LD:/Progra~1/GnuWin32/lib   	-Wl,--major-image-version=$(MAJOR) -Wl,--minor-image-version=$(MINOR)
 LIBOBJS = 
-LIBS =  -Wl,-s  -Le:/progra~1/gnuwin32/lib -lgw32c  -liberty -lintl -liconv -lwsock32 -lole32 -luuid -lmsvcp60  
+LIBS =  -Wl,-s  -LD:/Progra~1/GnuWin32/lib -lgw32c  -liberty -lintl -liconv -lwsock32 -lole32 -luuid -lmsvcp60  
 OBJEXT = o
 PACKAGE_NAME = patch
 PACKAGE_VERSION = 2.5.9
 VERSION = $(PACKAGE_VERSION)
+MAJOR=$(shell echo $(VERSION) | sed -e "s/\..*$$//")
+MINOR=$(shell echo $(VERSION) | sed -e "s/^[^\.]*\.0*\([^.]*\).*$$/\1/")
+MAJOR=$(shell echo $(VERSION) | sed -e "s/\..*$$//")
+MINOR=$(shell echo $(VERSION) | sed -e "s/^[^\.]*\.0*\([^.]*\).*$$/\1/")
 MAJOR=$(shell echo $(VERSION) | sed -e "s/\..*$$//")
 MINOR=$(shell echo $(VERSION) | sed -e "s/^[^\.]*\.0*\([^.]*\).*$$/\1/")
 MAJOR=$(shell echo $(VERSION) | sed -e "s/\\..*$$//")

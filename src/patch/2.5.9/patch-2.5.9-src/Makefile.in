@@ -36,7 +36,7 @@ transform = @program_transform_name@
 
 CFLAGS = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@
-DEFS = -DINSTALLDIR=\"$(prefix)\"  -DINSTALLDIR=\"$(prefix)\"  @DEFS@
+DEFS = -DINSTALLDIR=\"$(prefix)\"  -DINSTALLDIR=\"$(prefix)\"  -DINSTALLDIR=\"$(prefix)\"  -DINSTALLDIR=\"$(prefix)\"  @DEFS@
 EXEEXT = @EXEEXT@
 LDFLAGS = @LDFLAGS@	-Wl,--major-image-version=$(MAJOR) -Wl,--minor-image-version=$(MINOR)
 LIBOBJS = @LIBOBJS@
@@ -45,6 +45,10 @@ OBJEXT = @OBJEXT@
 PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 VERSION = $(PACKAGE_VERSION)
+MAJOR=$(shell echo $(VERSION) | sed -e "s/\..*$$//")
+MINOR=$(shell echo $(VERSION) | sed -e "s/^[^\.]*\.0*\([^.]*\).*$$/\1/")
+MAJOR=$(shell echo $(VERSION) | sed -e "s/\..*$$//")
+MINOR=$(shell echo $(VERSION) | sed -e "s/^[^\.]*\.0*\([^.]*\).*$$/\1/")
 MAJOR=$(shell echo $(VERSION) | sed -e "s/\..*$$//")
 MINOR=$(shell echo $(VERSION) | sed -e "s/^[^\.]*\.0*\([^.]*\).*$$/\1/")
 MAJOR=$(shell echo $(VERSION) | sed -e "s/\\..*$$//")
