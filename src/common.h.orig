@@ -324,9 +324,5 @@ GENERIC_OBJECT *realloc ();
 #endif
 
 #ifndef TTY_DEVICE
-#ifndef __WIN32__
 #define TTY_DEVICE "/dev/tty"
-#else
-#define TTY_DEVICE (_fileno(stdout))
-#endif /* __WIN32_ */
 #endif

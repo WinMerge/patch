@@ -1,5 +1,5 @@
-manifest/patch-2.5.4-src.mft
-manifest/patch-2.5.4-src.ver
+manifest/patch-2.5.4-1-src.mft
+manifest/patch-2.5.4-1-src.ver
 src/aclocal.m4
 src/addext.c
 src/ansi2knr.1
@@ -13,6 +13,7 @@ src/basename.c
 src/basename.h
 src/ChangeLog
 src/common.h
+src/common.h.orig
 src/config.cache
 src/config.guess
 src/config.h
@@ -43,6 +44,8 @@ src/m4/utimbuf.m4
 src/Makefile
 src/Makefile.in
 src/makefile.mingw
+src/makefile.orig
+src/makefile.sed
 src/maketime.c
 src/maketime.h
 src/malloc.c
@@ -52,6 +55,7 @@ src/mkinstalldirs
 src/NEWS
 src/partime.c
 src/partime.h
+src/patch-2.5.4-1-GNUWIN32.diffs
 src/patch.c
 src/patch.man
 src/patch.rc
@@ -72,6 +76,7 @@ src/realloc.c
 src/rename.c
 src/rmdir.c
 src/util.c
+src/util.c.orig
 src/util.h
 src/version.c
 src/version.h

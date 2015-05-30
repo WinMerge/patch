@@ -82,7 +82,7 @@
 #define HAVE_RAISE 1
 
 /* Define if you have the rename function.  */
-#define HAVE_RENAME 1
+/* #undef HAVE_RENAME */
 
 /* Define if you have the rmdir function.  */
 #define HAVE_RMDIR 1
@@ -94,7 +94,7 @@
 /* #undef HAVE_SIGACTION */
 
 /* Define if you have the sigprocmask function.  */
-/* #undef HAVE_SIGPROCMASK */
+#define HAVE_SIGPROCMASK 1
 
 /* Define if you have the sigsetmask function.  */
 /* #undef HAVE_SIGSETMASK */
@@ -127,7 +127,7 @@
 #define HAVE_UNISTD_H 1
 
 /* Define if you have the <utime.h> header file.  */
-/* #undef HAVE_UTIME_H */
+#define HAVE_UTIME_H 1
 
 /* Define if you have the <varargs.h> header file.  */
 #define HAVE_VARARGS_H 1
@@ -150,7 +150,7 @@
 
 /* Define if struct utimbuf is declared -- usually in <utime.h>.
    Some systems have utime.h but don't declare the struct anywhere.  */
-/* #undef HAVE_STRUCT_UTIMBUF */
+#define HAVE_STRUCT_UTIMBUF 1
 
 /* Define if the malloc check has been performed.  */
 #define HAVE_DONE_WORKING_MALLOC_CHECK 1

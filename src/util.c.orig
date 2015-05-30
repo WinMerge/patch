@@ -568,12 +568,7 @@ ask (char const *format, ...)
 	 which makes a call-process `patch' hang when it reads from /dev/tty.
 	 POSIX.2 requires that we read /dev/tty, though.  */
       ttyfd = (posixly_correct || isatty (STDOUT_FILENO)
-#ifndef __WIN32__
-			? open (TTY_DEVICE, O_RDONLY)
-#else /* __WIN32__ */
-			? _fileno(stdout)
-#endif /* __WIN32__ */
-
+	       ? open (TTY_DEVICE, O_RDONLY)
 	       : -1);
     }
 
@@ -587,7 +582,6 @@ ask (char const *format, ...)
   else
     {
       size_t s = 0;
-#ifndef __WIN32__
       while ((r = read (ttyfd, buf + s, bufsize - 1 - s)) == bufsize - 1 - s
 	     && buf[bufsize - 2] != '\n')
 	{
@@ -597,15 +591,6 @@ ask (char const *format, ...)
 	  if (!buf)
 	    memory_fatal ();
 	}
-#else /* __WIN32__ */
-	{
-	  char wbuf[80]={80};
-	  _cgets(wbuf);
-	  r = wbuf[1];
-	  buf = realloc(buf, r+2);
-	  strcpy(buf, &wbuf[2]);
-	}	  
-#endif /* __WIN32__ */
       if (r == 0)
 	printf ("EOF\n");
       else if (r < 0)
