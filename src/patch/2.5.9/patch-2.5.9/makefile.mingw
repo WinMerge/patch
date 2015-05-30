@@ -8,6 +8,8 @@ sedfiles=Makefile libtool config.h
 BUILDDIR=$(shell pwd.sh)
 SRCDIR=../$(shell basename $(BUILDDIR)-src)
 
+export ac_cv_path_ed_PROGRAM=ed.exe
+
 .PHONY: all 
 all: CONF MFSED
 CONF:

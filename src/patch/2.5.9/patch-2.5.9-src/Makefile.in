@@ -36,7 +36,7 @@ transform = @program_transform_name@
 
 CFLAGS = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@
-DEFS = -DINSTALLDIR=\"$(prefix)\"  @DEFS@
+DEFS = -DINSTALLDIR=\"$(prefix)\"  -DINSTALLDIR=\"$(prefix)\"  @DEFS@
 EXEEXT = @EXEEXT@
 LDFLAGS = @LDFLAGS@	-Wl,--major-image-version=$(MAJOR) -Wl,--minor-image-version=$(MINOR)
 LIBOBJS = @LIBOBJS@
@@ -45,6 +45,8 @@ OBJEXT = @OBJEXT@
 PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 VERSION = $(PACKAGE_VERSION)
+MAJOR=$(shell echo $(VERSION) | sed -e "s/\..*$$//")
+MINOR=$(shell echo $(VERSION) | sed -e "s/^[^\.]*\.0*\([^.]*\).*$$/\1/")
 MAJOR=$(shell echo $(VERSION) | sed -e "s/\\..*$$//")
 MINOR=$(shell echo $(VERSION) | sed -e "s/^[^\\.]*\\.0*\\([^.]*\\).*$$/\\1/")
 
@@ -67,7 +69,7 @@ CONFIG_STATUS = config.status
 SHELL = /bin/sh
 
 LIBSRCS = error.c malloc.c memchr.c mkdir.c \
-	realloc.c rmdir.c strcasecmp.c strncasecmp.c
+	realloc.c rmdir.c strcasecmp.c strncasecmp.c hash.c
 SRCS = patch-res.rc $(LIBSRCS) \
 	addext.c argmatch.c backupfile.c \
 	basename.c dirname.c \
@@ -83,12 +85,13 @@ OBJS = patch-res.o $(LIBOBJS) \
 	maketime.$(OBJEXT) partime.$(OBJEXT) \
 	patch.$(OBJEXT) pch.$(OBJEXT) \
 	quote.$(OBJEXT) quotearg.$(OBJEXT) quotesys.$(OBJEXT) \
-	util.$(OBJEXT) version.$(OBJEXT) xmalloc.$(OBJEXT)
+	util.$(OBJEXT) version.$(OBJEXT) xmalloc.$(OBJEXT) hash.$(OBJEXT) \
+	pc_quote.$(OBJEXT)
 HDRS = argmatch.h backupfile.h common.h dirname.h \
 	error.h getopt.h gettext.h \
 	inp.h maketime.h partime.h pch.h \
 	quote.h quotearg.h quotesys.h \
-	unlocked-io.h util.h version.h xalloc.h
+	unlocked-io.h util.h version.h xalloc.h hash.h
 MISC = AUTHORS COPYING ChangeLog INSTALL Makefile.in NEWS README \
 	aclocal.m4 \
 	config.hin configure configure.ac \

@@ -37,6 +37,12 @@ quote_system_arg (quoted, arg)
   char const *a;
   size_t len = 0;
 
+  /* A hook for non-Posix platforms to define a quoting
+     scheme peculiar to their implementation of `system'.  */
+#ifdef quote_system_arg_func
+  return quote_system_arg_func (quoted, arg);
+#else
+
   /* Scan ARG, copying it to QUOTED if QUOTED is not null,
      looking for shell metacharacters.  */
 
@@ -122,4 +128,5 @@ quote_system_arg (quoted, arg)
 	quoted[len] = c;
       len++;
     }
+#endif /* nonposix_quote_system_arg */
 }

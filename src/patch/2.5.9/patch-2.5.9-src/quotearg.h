@@ -27,11 +27,14 @@
 /* Basic quoting styles.  */
 enum quoting_style
   {
-    literal_quoting_style,	/* --quoting-style=literal */
+	default_quoting_style,  /* --quoting-style=default */
+	literal_quoting_style,	/* --quoting-style=literal */
     shell_quoting_style,	/* --quoting-style=shell */
     shell_always_quoting_style,	/* --quoting-style=shell-always */
     c_quoting_style,		/* --quoting-style=c */
     escape_quoting_style,	/* --quoting-style=escape */
+    dos_shell_quoting_style,     /* --quoting-style=dos-shell */
+    nt_shell_quoting_style, /* --quoting-style=nt-shell */
     locale_quoting_style,	/* --quoting-style=locale */
     clocale_quoting_style	/* --quoting-style=clocale */
   };

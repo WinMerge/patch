@@ -25,6 +25,14 @@
 
 #include "xalloc.h"
 
+#ifndef DEFAULT_OS_QUOTING_STYLE
+# define DEFAULT_OS_QUOTING_STYLE shell_quoting_style
+#endif
+
+#ifdef DEFAULT_OS_QUOTING_STYLE_DCL
+ DEFAULT_OS_QUOTING_STYLE_DCL
+#endif
+
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
@@ -87,12 +95,15 @@ struct quoting_options
 /* Names of quoting styles.  */
 char const *const quoting_style_args[] =
 {
+  "default",
   "literal",
   "shell",
   "shell-always",
   "c",
   "escape",
   "locale",
+  "dos-shell",
+  "nt-shell",
   "clocale",
   0
 };
@@ -100,11 +111,14 @@ char const *const quoting_style_args[] =
 /* Correspondences to quoting style names.  */
 enum quoting_style const quoting_style_vals[] =
 {
+  default_quoting_style, 
   literal_quoting_style,
   shell_quoting_style,
   shell_always_quoting_style,
   c_quoting_style,
   escape_quoting_style,
+  dos_shell_quoting_style,
+  nt_shell_quoting_style,
   locale_quoting_style,
   clocale_quoting_style
 };
@@ -137,6 +151,8 @@ get_quoting_style (struct quoting_options *o)
 void
 set_quoting_style (struct quoting_options *o, enum quoting_style s)
 {
+  if (s == default_quoting_style)
+    s = DEFAULT_OS_QUOTING_STYLE;
   (o ? o : &default_quoting_options)->style = s;
 }
 
@@ -186,12 +202,15 @@ quotearg_buffer_restyled (char *buffer, size_t buffersize,
 			  enum quoting_style quoting_style,
 			  struct quoting_options const *o)
 {
+  unsigned char c;
   size_t i;
   size_t len = 0;
+  int quote_mark;
   char const *quote_string = 0;
   size_t quote_string_len = 0;
   int backslash_escapes = 0;
   int unibyte_locale = MB_CUR_MAX == 1;
+  struct quoting_options const *p = o ? o : &default_quoting_options;
 
 #define STORE(c) \
     do \
@@ -241,6 +260,66 @@ quotearg_buffer_restyled (char *buffer, size_t buffersize,
 	quote_string = right;
 	quote_string_len = strlen (quote_string);
       }
+      break;
+
+    case shell_quoting_style:
+    case dos_shell_quoting_style:
+    case nt_shell_quoting_style:
+      if (! (argsize == (size_t) -1 ? arg[0] == '\0' : argsize == 0))
+     {
+       switch (arg[0])
+         {
+         case '#': case '~':
+           if (quoting_style == shell_quoting_style)
+          break;
+
+           /* Fall through.  */
+         default:
+           for (i = 0; ; i++)
+          {
+            if (argsize == (size_t) -1 ? arg[i] == '\0' : i == argsize)
+              goto done;
+
+            c = arg[i];
+
+            switch (c)
+              {
+              case ' ': case '\t':
+              case '<': case '>': case '|':
+              case '"': case '\'':
+              case '*': case '?': case '[':
+              case '&': /* special in [4N]DOS.COM and in CMD.EXE */
+              case '^': /* special in old /bin/sh, e.g. SunOS 4.1.4
+                     and in [4N]DOS.COM  */
+                goto needs_quoting;
+              case '.': /* `...': special in DJGPP wildcard expansion */
+                if (quoting_style != shell_quoting_style
+                 && arg[i+1] == '.' && arg[i+2] == '.'
+                 && strchr ("\\/", arg[i+3]))
+               goto needs_quoting;
+              case '!': /* special in csh */
+              case '$': case '`':
+              case '(': case ')': case ';':
+              case '\\': case '\n':
+                if (quoting_style == shell_quoting_style)
+               goto needs_quoting;
+              case '%':
+                if (quoting_style == dos_shell_quoting_style)
+               goto needs_quoting;
+              }
+
+            if (p->quote_these_too[c / INT_BITS] & (1 << (c % INT_BITS)))
+              goto needs_quoting;
+
+            STORE (c);
+          }
+         needs_quoting:;
+
+           quote_mark = quoting_style == shell_quoting_style ? '\'' : '"';
+           len = 0;
+           break;
+         }
+     }
       break;
 
     case shell_always_quoting_style:
@@ -348,13 +427,17 @@ quotearg_buffer_restyled (char *buffer, size_t buffersize,
 	case '\'':
 	  switch (quoting_style)
 	    {
-	    case shell_quoting_style:
+        case nt_shell_quoting_style:
+		case dos_shell_quoting_style:
+		case shell_quoting_style:
 	      goto use_shell_always_quoting_style;
 
 	    case shell_always_quoting_style:
-	      STORE ('\'');
-	      STORE ('\\');
-	      STORE ('\'');
+          if (c == quote_mark) {
+	        STORE ('\'');
+	        STORE ('\\');
+	        STORE ('\'');
+		  }
 	      break;
 
 	    default:
@@ -362,7 +445,20 @@ quotearg_buffer_restyled (char *buffer, size_t buffersize,
 	    }
 	  break;
 
-	case '%': case '+': case ',': case '-': case '.': case '/':
+	case '%':
+	  switch (quoting_style)
+	    {
+        case dos_shell_quoting_style:
+         if (c == '%')     /* need to double it under DOS shells */
+           {
+             STORE (c);
+             break;
+           }
+        default:
+          break;
+		 }
+		 
+	case '+': case ',': case '-': case '.': case '/':
 	case '0': case '1': case '2': case '3': case '4': case '5':
 	case '6': case '7': case '8': case '9': case ':': case '=':
 	case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
@@ -476,6 +572,7 @@ quotearg_buffer_restyled (char *buffer, size_t buffersize,
     for (; *quote_string; quote_string++)
       STORE (*quote_string);
 
+done:
   if (len < buffersize)
     buffer[len] = '\0';
   return len;

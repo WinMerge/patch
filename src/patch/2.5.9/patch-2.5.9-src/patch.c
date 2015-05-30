@@ -135,7 +135,7 @@ main (int argc, char **argv)
     {
       int i = val ? argmatch (val, quoting_style_args, 0, 0) : -1;
       set_quoting_style ((struct quoting_options *) 0,
-			 i < 0 ? shell_quoting_style : (enum quoting_style) i);
+			 i < 0 ? DEFAULT_QUOTING_STYLE : (enum quoting_style) i);
     }
 
     posixly_correct = getenv ("POSIXLY_CORRECT") != 0;

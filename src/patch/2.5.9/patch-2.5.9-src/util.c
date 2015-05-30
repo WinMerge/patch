@@ -45,9 +45,17 @@
 # define raise(sig) kill (getpid (), sig)
 #endif
 
+#if defined(HAVE_STAT_TIMEVAL)
+#include <time.h>
+#endif
+
 #include <stdarg.h>
+#include <hash.h>
 
 static void makedirs (char *);
+static bool fid_search (const char *, const struct stat *, bool);
+# define fid_exists(name, pst) fid_search (name, pst, false)
+# define insert_fid(name) fid_search (name, NULL, true)
 
 /* Move a file FROM (where *FROM_NEEDS_REMOVAL is nonzero if FROM
    needs removal when cleaning up at the end of execution)
@@ -64,7 +72,7 @@ move_file (char const *from, int volatile *from_needs_removal,
   struct stat to_st;
   int to_errno = ! backup ? -1 : stat (to, &to_st) == 0 ? 0 : errno;
 
-  if (backup)
+  if (backup && (to_errno || ! fid_exists (to, &to_st)))
     {
       int try_makedirs_errno = 0;
       char *bakname;
@@ -165,6 +173,7 @@ move_file (char const *from, int volatile *from_needs_removal,
 	      if (! to_dir_known_to_exist)
 		makedirs (to);
 	      copy_file (from, to, 0, mode);
+	      insert_fid (to);
 	      return;
 	    }
 
@@ -173,6 +182,7 @@ move_file (char const *from, int volatile *from_needs_removal,
 	}
 
     rename_succeeded:
+      insert_fid (to);
       /* Do not clear *FROM_NEEDS_REMOVAL if it's possible that the
 	 rename returned zero because FROM and TO are hard links to
 	 the same file.  */
@@ -1026,3 +1036,105 @@ Fseek (FILE *stream, file_offset offset, int ptrname)
   if (file_seek (stream, offset, ptrname) != 0)
     pfatal ("fseek");
 }
+
+typedef struct
+{
+  dev_t		fid_dev;
+  ino_t		fid_ino;
+  time_t	fid_mtime;
+  unsigned long	fid_mtimensec;
+} file_id;
+
+unsigned
+file_id_hasher (file_id *entry, unsigned table_size)
+{
+  return ((unsigned long) entry->fid_ino +
+  	  (unsigned long) entry->fid_dev +
+  	  (unsigned long) entry->fid_mtime +
+	  (unsigned long) entry->fid_mtimensec) % table_size;
+}
+
+bool
+file_id_comparator (file_id *entry1, file_id *entry2)
+{
+  return (entry1->fid_dev	== entry2->fid_dev &&
+	  entry1->fid_ino	== entry2->fid_ino &&
+	  entry1->fid_mtime	== entry2->fid_mtime &&
+	  entry1->fid_mtimensec == entry2->fid_mtimensec);
+}
+
+void
+file_id_freer (file_id *entry)
+{
+  free (entry);
+}
+
+Hash_table *file_id_hash;
+
+/* Check if the file identified by FILENAME and PST was already seen. If the
+   file was already seen, returns TRUE.  If the file has not yet been seen
+   and INSERT is TRUE, it is inserted.  PST or FILENAME may be NULL (but not
+   both of them).  */
+
+static bool
+fid_search (const char *filename, const struct stat *pst, bool insert)
+{
+  struct stat st;
+
+  if (!file_id_hash)
+    {
+      file_id_hash = hash_initialize (0, NULL, (Hash_hasher) file_id_hasher,
+				      (Hash_comparator) file_id_comparator,
+				      (Hash_data_freer) file_id_freer);
+      if (!file_id_hash)
+	pfatal ("hash_initialize");
+    }
+
+  if (!pst)
+    {
+      if (stat (filename, &st) != 0)
+	pfatal ("%s", quotearg (filename));
+      pst = &st;
+    }
+
+  if (insert)
+    {
+      file_id *pfid = xmalloc (sizeof (file_id)), *old_pfid;
+      pfid->fid_dev	  = pst->st_dev;
+      pfid->fid_ino	  = pst->st_ino;
+      pfid->fid_mtime	  = pst->st_mtime;
+#if defined(HAVE_STAT_NSEC)
+      pfid->fid_mtimensec = pst->st_mtimensec;
+#elif defined(HAVE_STAT_TIMEVAL)
+      pfid->fid_mtimensec = pst->st_mtim.tv_nsec;
+#else
+      pfid->fid_mtimensec = 0;
+#endif
+      old_pfid = hash_insert (file_id_hash, pfid);
+      if (!old_pfid)
+	pfatal ("hash_insert");
+      else if (old_pfid != pfid)
+        {
+	  free (pfid);
+	  return true;
+	}
+      else
+	return false;
+    }
+  else
+    {
+      file_id fid;
+      fid.fid_dev	= pst->st_dev;
+      fid.fid_ino	= pst->st_ino;
+      fid.fid_mtime	= pst->st_mtime;
+#if defined(HAVE_STAT_NSEC)
+      fid.fid_mtimensec = pst->st_mtimensec;
+#elif defined(HAVE_STAT_TIMEVAL)
+      fid.fid_mtimensec = pst->st_mtim.tv_nsec;
+#else
+      fid.fid_mtimensec = 0;
+#endif
+      return hash_lookup (file_id_hash, &fid) != 0;
+    }
+}
+

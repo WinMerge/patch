@@ -289,7 +289,11 @@ void *realloc ();
 #endif
 
 #ifndef NULL_DEVICE
+#ifndef _WIN32
 #define NULL_DEVICE "/dev/null"
+#else
+#define NULL_DEVICE "NUL"
+#endif /* _WIN32 */
 #endif
 
 #ifndef TTY_DEVICE

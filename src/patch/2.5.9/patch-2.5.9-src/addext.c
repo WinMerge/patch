@@ -97,15 +97,64 @@ addext (char *filename, char const *ext, int e)
     {
       /* Live within DOS's 8.3 limit.  */
       char *dot = strchr (s, '.');
+      size_t s_ext_len = 0;	/* length of existing extension in `s' */
+
       if (dot)
+	s_ext_len = slen - (dot + 1 - s);
+      else if (ext[0] == '.')
 	{
-	  slen -= dot + 1 - s;
-	  s = dot + 1;
-	  slen_max = 3;
+	  s[slen++] = '.';
+	  s[slen] = '\0';
+	  dot = s + slen - 1;
+	}
+
+      /* DOS doesn't allow more than a single dot.  */
+      if (ext[0] == '.')
+	{
+	  ext++;
+	  extlen--;
+	}
+
+      /* If EXT is "~N~" and there's not enough space to append it,
+	 lose the leading `~' so that we could salvage more of the
+	 original name ("foo.c" + ".~9~" -> "foo.c9~").  */
+      if (s_ext_len + extlen > 3 && ext[0] == '~' && extlen > 1)
+	{
+	  ext++;
+	  extlen--;
+	}
+      /* If there isn't enough space in the extension to append
+	 EXT, use the base part ("foo.c" + ".~99~" -> "foo99~").  */
+      if (!dot || extlen > 3)
+	{
+	  slen_max = 8;
+	  if (dot)
+	    slen = dot - s;
+	  if (extlen < slen_max)
+	    {
+	      if (slen + extlen > slen_max)
+		slen = slen_max - extlen;
+	    }
+	  /* Else give up and force using E.  We don't allow EXT to
+	     eat up all of the original filename's characters.  That
+	     is, "foo" + ".~3456789~" should NOT yield "3456789~".  */
+	  else if (dot)
+	    {
+	      slen_max = 3;
+	      extlen = 4;
+	      s = dot + 1;
+	      slen = s_ext_len;
+	    }
 	}
       else
-	slen_max = 8;
-      extlen = 9; /* Don't use EXT.  */
+	{
+	  /* Extension has enough space to append EXT.  */
+	  slen_max = 3;
+	  slen = s_ext_len;
+	  s = dot + 1;
+	  if (slen + extlen > slen_max)
+	    slen = slen_max - extlen;
+	}
     }
 
   if (slen + extlen <= slen_max)

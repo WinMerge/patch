@@ -191,7 +191,11 @@ max_backup_version (const char *file, const char *dir)
 
   while ((dp = readdir (dirp)) != 0)
     {
-      if (!REAL_DIR_ENTRY (dp) || NLENGTH (dp) < file_name_length + 4)
+      if (!REAL_DIR_ENTRY (dp)
+	  /* Under DOS 8+3 file name limits, backup extensions
+	     may consume part of the original name.  */
+	  || (! HAVE_DOS_FILE_NAMES && NLENGTH (dp) < file_name_length + 4)
+	  || NLENGTH (dp) < file_name_length)
 	continue;
 
       this_version = version_number (file, dp->d_name, file_name_length);
@@ -211,18 +215,30 @@ static int
 version_number (const char *base, const char *backup, size_t base_length)
 {
   int version;
-  const char *p;
+  const char *s = base;
+  const char *s_end = base + base_length;
+  const char *p = backup;
 
   version = 0;
-  if (strncmp (base, backup, base_length) == 0
-      && backup[base_length] == '.'
-      && backup[base_length + 1] == '~')
-    {
-      for (p = &backup[base_length + 2]; ISDIGIT (*p); ++p)
-	version = version * 10 + *p - '0';
-      if (p[0] != '~' || p[1])
-	version = 0;
-    }
+
+  /* This could use `strncmp', but under HAVE_DOS_FILE_NAMES the two
+     files need not compare equal to the full extent of BASE_LENGTH.  */
+  if (! filename_char_eq (*p, *s))
+    return 0;
+  for ( ; s < s_end && filename_char_eq (*p, *s); p++, s++)
+    ;
+  if (p[0] == '.' && p[1] == '~')
+    p += 2;
+  else if (! HAVE_DOS_FILE_NAMES)
+    return 0;
+  else if (*p == '.')	/* the case of foo.99~ vs foo.c */
+    p++;
+
+  for ( ; ISDIGIT (*p); ++p)
+    version = version * 10 + *p - '0';
+  if (p[0] != '~' || p[1])
+    version = 0;
+
   return version;
 }
 #endif /* HAVE_DIR */
