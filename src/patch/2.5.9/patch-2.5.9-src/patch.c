@@ -319,8 +319,6 @@ main (int argc, char **argv)
 		}
 	    }
 	}
-	printf ("got_hunk = %ld\n", got_hunk);
-	
 	if (!skip_rest_of_patch)
 	  {
 	    if (got_hunk < 0  &&  using_plan_a)
@@ -338,7 +336,6 @@ main (int argc, char **argv)
 	      }
 
 	    /* Finish spewing out the new file.  */
-		printf ("hunk = %ld\n", hunk);
 		assert (hunk);
 	    if (! spew_output (&outstate))
 	      {

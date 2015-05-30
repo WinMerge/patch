@@ -469,11 +469,11 @@ s,@DEFS@,-DHAVE_CONFIG_H,;t t
 s,@ECHO_C@,,;t t
 s,@ECHO_N@,-n,;t t
 s,@ECHO_T@,,;t t
-s,@LIBS@, -Wl,-s  -LD:/Progra~1/GnuWin32/lib -lgw32c  -liberty -lintl -liconv -lwsock32 -lole32 -luuid -lmsvcp60  ,;t t
+s,@LIBS@, -Wl,-s  -LD:/Progra~1/GnuWin32/lib   -liberty -lintl -lwsock32 -lole32 -luuid -lmsvcp60  ,;t t
 s,@CC@,gcc,;t t
-s,@CFLAGS@, -Wall -O3 -fms-extensions -mms-bitfields -fno-exceptions -fomit-frame-pointer -march=i386 -mcpu=i686 -ffast-math  ,;t t
+s,@CFLAGS@, -Wall -O3 -fms-extensions -mms-bitfields -fno-exceptions -fomit-frame-pointer -march=i386 -ffast-math  ,;t t
 s,@LDFLAGS@, -Wl,-s -Wl,--force-exe-suffix -Wl,--enable-auto-import -Wl,--enable-runtime-pseudo-reloc -Wl,--allow-multiple-definition -Wl,--enable-stdcall-fixup -LD:/Progra~1/GnuWin32/lib   ,;t t
-s,@CPPFLAGS@,  -D__GW32__ -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64     -idirafter D:/Progra~1/GnuWin32/include -idirafter g:/glibc/include   ,;t t
+s,@CPPFLAGS@,  -D__GW32__ -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64     -idirafter D:/Progra~1/GnuWin32/include -Ig:/winx/include   ,;t t
 s,@ac_ct_CC@,gcc,;t t
 s,@EXEEXT@,.exe,;t t
 s,@OBJEXT@,o,;t t
@@ -486,8 +486,8 @@ s,@ed_PROGRAM@,ed.exe,;t t
 s,@EGREP@,grep -E,;t t
 s,@STDBOOL_H@,,;t t
 s,@HAVE__BOOL@,1,;t t
-s,@LIBOBJS@,,;t t
-s,@LTLIBOBJS@,,;t t
+s,@LIBOBJS@, error$U.o,;t t
+s,@LTLIBOBJS@, error$U.lo,;t t
 CEOF
 
   # Split the substitutions into bite-sized pieces for seds with
@@ -797,7 +797,6 @@ ${ac_dA}PACKAGE_BUGREPORT${ac_dB}PACKAGE_BUGREPORT${ac_dC}"bug-patch@gnu.org"${a
 ${ac_dA}_GNU_SOURCE${ac_dB}_GNU_SOURCE${ac_dC}1${ac_dD}
 ${ac_dA}STDC_HEADERS${ac_dB}STDC_HEADERS${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_SYS_TYPES_H${ac_dB}HAVE_SYS_TYPES_H${ac_dC}1${ac_dD}
-${ac_dA}HAVE_SYS_STAT_H${ac_dB}HAVE_SYS_STAT_H${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_STDLIB_H${ac_dB}HAVE_STDLIB_H${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_STRING_H${ac_dB}HAVE_STRING_H${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_MEMORY_H${ac_dB}HAVE_MEMORY_H${ac_dC}1${ac_dD}
@@ -807,8 +806,6 @@ ${ac_dA}HAVE_STDINT_H${ac_dB}HAVE_STDINT_H${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_UNISTD_H${ac_dB}HAVE_UNISTD_H${ac_dC}1${ac_dD}
 ${ac_dA}_FILE_OFFSET_BITS${ac_dB}_FILE_OFFSET_BITS${ac_dC}64${ac_dD}
 ${ac_dA}_LARGE_FILES${ac_dB}_LARGE_FILES${ac_dC}1${ac_dD}
-${ac_dA}PROTOTYPES${ac_dB}PROTOTYPES${ac_dC}1${ac_dD}
-${ac_dA}__PROTOTYPES${ac_dB}__PROTOTYPES${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_DIRENT_H${ac_dB}HAVE_DIRENT_H${ac_dC}1${ac_dD}
 ${ac_dA}STDC_HEADERS${ac_dB}STDC_HEADERS${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_FCNTL_H${ac_dB}HAVE_FCNTL_H${ac_dC}1${ac_dD}
@@ -823,10 +820,13 @@ ${ac_dA}HAVE_SYS_TIME_H${ac_dB}HAVE_SYS_TIME_H${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_UTIME_H${ac_dB}HAVE_UTIME_H${ac_dC}1${ac_dD}
 ${ac_dA}TIME_WITH_SYS_TIME${ac_dB}TIME_WITH_SYS_TIME${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_STRUCT_UTIMBUF${ac_dB}HAVE_STRUCT_UTIMBUF${ac_dC}1${ac_dD}
-${ac_dA}CLOSEDIR_VOID${ac_dB}CLOSEDIR_VOID${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_LIMITS_H${ac_dB}HAVE_LIMITS_H${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_STDLIB_H${ac_dB}HAVE_STDLIB_H${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_STRING_H${ac_dB}HAVE_STRING_H${ac_dC}1${ac_dD}
+${ac_dA}HAVE_DECL_GETENV${ac_dB}HAVE_DECL_GETENV${ac_dC}1${ac_dD}
+${ac_dA}HAVE_DECL_MALLOC${ac_dB}HAVE_DECL_MALLOC${ac_dC}1${ac_dD}
+${ac_dA}FILESYSTEM_ACCEPTS_DRIVE_LETTER_PREFIX${ac_dB}FILESYSTEM_ACCEPTS_DRIVE_LETTER_PREFIX${ac_dC}1${ac_dD}
+${ac_dA}FILESYSTEM_BACKSLASH_IS_FILE_NAME_SEPARATOR${ac_dB}FILESYSTEM_BACKSLASH_IS_FILE_NAME_SEPARATOR${ac_dC}1${ac_dD}
 CEOF
   sed -f $tmp/defines.sed $tmp/in >$tmp/out
   rm -f $tmp/in
@@ -836,20 +836,13 @@ CEOF
 /^[	 ]*#[	 ]*define/!b
 t clr
 : clr
-${ac_dA}HAVE_DECL_GETENV${ac_dB}HAVE_DECL_GETENV${ac_dC}1${ac_dD}
-${ac_dA}HAVE_DECL_MALLOC${ac_dB}HAVE_DECL_MALLOC${ac_dC}1${ac_dD}
-${ac_dA}FILESYSTEM_ACCEPTS_DRIVE_LETTER_PREFIX${ac_dB}FILESYSTEM_ACCEPTS_DRIVE_LETTER_PREFIX${ac_dC}1${ac_dD}
-${ac_dA}FILESYSTEM_BACKSLASH_IS_FILE_NAME_SEPARATOR${ac_dB}FILESYSTEM_BACKSLASH_IS_FILE_NAME_SEPARATOR${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_UNISTD_H${ac_dB}HAVE_UNISTD_H${ac_dC}1${ac_dD}
 ${ac_dA}D_INO_IN_DIRENT${ac_dB}D_INO_IN_DIRENT${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_LONG_FILE_NAMES${ac_dB}HAVE_LONG_FILE_NAMES${ac_dC}1${ac_dD}
-${ac_dA}HAVE_PATHCONF${ac_dB}HAVE_PATHCONF${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_VPRINTF${ac_dB}HAVE_VPRINTF${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_STRERROR${ac_dB}HAVE_STRERROR${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_DECL_STRERROR${ac_dB}HAVE_DECL_STRERROR${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_DECL_STRERROR_R${ac_dB}HAVE_DECL_STRERROR_R${ac_dC}0${ac_dD}
-${ac_dA}HAVE_STRERROR_R${ac_dB}HAVE_STRERROR_R${ac_dC}1${ac_dD}
-${ac_dA}STRERROR_R_CHAR_P${ac_dB}STRERROR_R_CHAR_P${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_MEMCHR${ac_dB}HAVE_MEMCHR${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_RMDIR${ac_dB}HAVE_RMDIR${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_STDLIB_H${ac_dB}HAVE_STDLIB_H${ac_dC}1${ac_dD}
@@ -866,14 +859,21 @@ ${ac_dA}HAVE_MBRTOWC${ac_dB}HAVE_MBRTOWC${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_DECL_FREE${ac_dB}HAVE_DECL_FREE${ac_dC}1${ac_dD}
 ${ac_dA}HAVE__BOOL${ac_dB}HAVE__BOOL${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_STDBOOL_H${ac_dB}HAVE_STDBOOL_H${ac_dC}1${ac_dD}
-${ac_dA}HAVE_STAT_TIMEVAL${ac_dB}HAVE_STAT_TIMEVAL${ac_dC}1${ac_dD}
-${ac_dA}HAVE_PATHCONF${ac_dB}HAVE_PATHCONF${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_LIMITS_H${ac_dB}HAVE_LIMITS_H${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_STRING_H${ac_dB}HAVE_STRING_H${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_UNISTD_H${ac_dB}HAVE_UNISTD_H${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_DECL_FREE${ac_dB}HAVE_DECL_FREE${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_DECL_GETENV${ac_dB}HAVE_DECL_GETENV${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_DECL_MALLOC${ac_dB}HAVE_DECL_MALLOC${ac_dC}1${ac_dD}
+${ac_dA}HAVE_DECL_MKTEMP${ac_dB}HAVE_DECL_MKTEMP${ac_dC}1${ac_dD}
+${ac_dA}HAVE_ISASCII${ac_dB}HAVE_ISASCII${ac_dC}1${ac_dD}
+${ac_dA}HAVE_MEMCMP${ac_dB}HAVE_MEMCMP${ac_dC}1${ac_dD}
+${ac_dA}HAVE_MKTEMP${ac_dB}HAVE_MKTEMP${ac_dC}1${ac_dD}
+${ac_dA}HAVE_RAISE${ac_dB}HAVE_RAISE${ac_dC}1${ac_dD}
+${ac_dA}HAVE_STRERROR${ac_dB}HAVE_STRERROR${ac_dC}1${ac_dD}
+${ac_dA}HAVE_MKDIR${ac_dB}HAVE_MKDIR${ac_dC}1${ac_dD}
+${ac_dA}HAVE_STRNCASECMP${ac_dB}HAVE_STRNCASECMP${ac_dC}1${ac_dD}
+${ac_dA}_LARGEFILE_SOURCE${ac_dB}_LARGEFILE_SOURCE${ac_dC}1${ac_dD}
 CEOF
   sed -f $tmp/defines.sed $tmp/in >$tmp/out
   rm -f $tmp/in
@@ -883,35 +883,19 @@ CEOF
 /^[	 ]*#[	 ]*define/!b
 t clr
 : clr
-${ac_dA}HAVE_DECL_MKTEMP${ac_dB}HAVE_DECL_MKTEMP${ac_dC}1${ac_dD}
-${ac_dA}HAVE_GETEUID${ac_dB}HAVE_GETEUID${ac_dC}1${ac_dD}
-${ac_dA}HAVE_GETUID${ac_dB}HAVE_GETUID${ac_dC}1${ac_dD}
-${ac_dA}HAVE_ISASCII${ac_dB}HAVE_ISASCII${ac_dC}1${ac_dD}
-${ac_dA}HAVE_MEMCMP${ac_dB}HAVE_MEMCMP${ac_dC}1${ac_dD}
-${ac_dA}HAVE_MKTEMP${ac_dB}HAVE_MKTEMP${ac_dC}1${ac_dD}
-${ac_dA}HAVE_PATHCONF${ac_dB}HAVE_PATHCONF${ac_dC}1${ac_dD}
-${ac_dA}HAVE_RAISE${ac_dB}HAVE_RAISE${ac_dC}1${ac_dD}
-${ac_dA}HAVE_SIGACTION${ac_dB}HAVE_SIGACTION${ac_dC}1${ac_dD}
-${ac_dA}HAVE_SIGPROCMASK${ac_dB}HAVE_SIGPROCMASK${ac_dC}1${ac_dD}
-${ac_dA}HAVE_STRERROR${ac_dB}HAVE_STRERROR${ac_dC}1${ac_dD}
-${ac_dA}HAVE_MKDIR${ac_dB}HAVE_MKDIR${ac_dC}1${ac_dD}
-${ac_dA}HAVE_STRNCASECMP${ac_dB}HAVE_STRNCASECMP${ac_dC}1${ac_dD}
-${ac_dA}_LARGEFILE_SOURCE${ac_dB}_LARGEFILE_SOURCE${ac_dC}1${ac_dD}
-${ac_dA}HAVE_FSEEKO${ac_dB}HAVE_FSEEKO${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_DECL_CLEARERR_UNLOCKED${ac_dB}HAVE_DECL_CLEARERR_UNLOCKED${ac_dC}0${ac_dD}
-${ac_dA}HAVE_DECL_FEOF_UNLOCKED${ac_dB}HAVE_DECL_FEOF_UNLOCKED${ac_dC}1${ac_dD}
-${ac_dA}HAVE_DECL_FERROR_UNLOCKED${ac_dB}HAVE_DECL_FERROR_UNLOCKED${ac_dC}1${ac_dD}
+${ac_dA}HAVE_DECL_FEOF_UNLOCKED${ac_dB}HAVE_DECL_FEOF_UNLOCKED${ac_dC}0${ac_dD}
+${ac_dA}HAVE_DECL_FERROR_UNLOCKED${ac_dB}HAVE_DECL_FERROR_UNLOCKED${ac_dC}0${ac_dD}
 ${ac_dA}HAVE_DECL_FFLUSH_UNLOCKED${ac_dB}HAVE_DECL_FFLUSH_UNLOCKED${ac_dC}0${ac_dD}
-${ac_dA}HAVE_DECL_FGETS_UNLOCKED${ac_dB}HAVE_DECL_FGETS_UNLOCKED${ac_dC}1${ac_dD}
-${ac_dA}HAVE_DECL_FPUTC_UNLOCKED${ac_dB}HAVE_DECL_FPUTC_UNLOCKED${ac_dC}1${ac_dD}
-${ac_dA}HAVE_DECL_FPUTS_UNLOCKED${ac_dB}HAVE_DECL_FPUTS_UNLOCKED${ac_dC}1${ac_dD}
-${ac_dA}HAVE_DECL_FREAD_UNLOCKED${ac_dB}HAVE_DECL_FREAD_UNLOCKED${ac_dC}1${ac_dD}
-${ac_dA}HAVE_DECL_FWRITE_UNLOCKED${ac_dB}HAVE_DECL_FWRITE_UNLOCKED${ac_dC}1${ac_dD}
-${ac_dA}HAVE_DECL_GETC_UNLOCKED${ac_dB}HAVE_DECL_GETC_UNLOCKED${ac_dC}1${ac_dD}
-${ac_dA}HAVE_DECL_GETCHAR_UNLOCKED${ac_dB}HAVE_DECL_GETCHAR_UNLOCKED${ac_dC}1${ac_dD}
-${ac_dA}HAVE_DECL_PUTC_UNLOCKED${ac_dB}HAVE_DECL_PUTC_UNLOCKED${ac_dC}1${ac_dD}
-${ac_dA}HAVE_DECL_PUTCHAR_UNLOCKED${ac_dB}HAVE_DECL_PUTCHAR_UNLOCKED${ac_dC}1${ac_dD}
-${ac_dA}CLOSEDIR_VOID${ac_dB}CLOSEDIR_VOID${ac_dC}1${ac_dD}
+${ac_dA}HAVE_DECL_FGETS_UNLOCKED${ac_dB}HAVE_DECL_FGETS_UNLOCKED${ac_dC}0${ac_dD}
+${ac_dA}HAVE_DECL_FPUTC_UNLOCKED${ac_dB}HAVE_DECL_FPUTC_UNLOCKED${ac_dC}0${ac_dD}
+${ac_dA}HAVE_DECL_FPUTS_UNLOCKED${ac_dB}HAVE_DECL_FPUTS_UNLOCKED${ac_dC}0${ac_dD}
+${ac_dA}HAVE_DECL_FREAD_UNLOCKED${ac_dB}HAVE_DECL_FREAD_UNLOCKED${ac_dC}0${ac_dD}
+${ac_dA}HAVE_DECL_FWRITE_UNLOCKED${ac_dB}HAVE_DECL_FWRITE_UNLOCKED${ac_dC}0${ac_dD}
+${ac_dA}HAVE_DECL_GETC_UNLOCKED${ac_dB}HAVE_DECL_GETC_UNLOCKED${ac_dC}0${ac_dD}
+${ac_dA}HAVE_DECL_GETCHAR_UNLOCKED${ac_dB}HAVE_DECL_GETCHAR_UNLOCKED${ac_dC}0${ac_dD}
+${ac_dA}HAVE_DECL_PUTC_UNLOCKED${ac_dB}HAVE_DECL_PUTC_UNLOCKED${ac_dC}0${ac_dD}
+${ac_dA}HAVE_DECL_PUTCHAR_UNLOCKED${ac_dB}HAVE_DECL_PUTCHAR_UNLOCKED${ac_dC}0${ac_dD}
 ${ac_dA}HAVE_FCNTL_H${ac_dB}HAVE_FCNTL_H${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_UNISTD_H${ac_dB}HAVE_UNISTD_H${ac_dC}1${ac_dD}
 ${ac_dA}HAVE_SETMODE_DOS${ac_dB}HAVE_SETMODE_DOS${ac_dC}1${ac_dD}
@@ -940,7 +924,6 @@ ${ac_uA}PACKAGE_BUGREPORT${ac_uB}PACKAGE_BUGREPORT${ac_uC}"bug-patch@gnu.org"${a
 ${ac_uA}_GNU_SOURCE${ac_uB}_GNU_SOURCE${ac_uC}1${ac_uD}
 ${ac_uA}STDC_HEADERS${ac_uB}STDC_HEADERS${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_SYS_TYPES_H${ac_uB}HAVE_SYS_TYPES_H${ac_uC}1${ac_uD}
-${ac_uA}HAVE_SYS_STAT_H${ac_uB}HAVE_SYS_STAT_H${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_STDLIB_H${ac_uB}HAVE_STDLIB_H${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_STRING_H${ac_uB}HAVE_STRING_H${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_MEMORY_H${ac_uB}HAVE_MEMORY_H${ac_uC}1${ac_uD}
@@ -950,8 +933,6 @@ ${ac_uA}HAVE_STDINT_H${ac_uB}HAVE_STDINT_H${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_UNISTD_H${ac_uB}HAVE_UNISTD_H${ac_uC}1${ac_uD}
 ${ac_uA}_FILE_OFFSET_BITS${ac_uB}_FILE_OFFSET_BITS${ac_uC}64${ac_uD}
 ${ac_uA}_LARGE_FILES${ac_uB}_LARGE_FILES${ac_uC}1${ac_uD}
-${ac_uA}PROTOTYPES${ac_uB}PROTOTYPES${ac_uC}1${ac_uD}
-${ac_uA}__PROTOTYPES${ac_uB}__PROTOTYPES${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_DIRENT_H${ac_uB}HAVE_DIRENT_H${ac_uC}1${ac_uD}
 ${ac_uA}STDC_HEADERS${ac_uB}STDC_HEADERS${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_FCNTL_H${ac_uB}HAVE_FCNTL_H${ac_uC}1${ac_uD}
@@ -966,10 +947,13 @@ ${ac_uA}HAVE_SYS_TIME_H${ac_uB}HAVE_SYS_TIME_H${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_UTIME_H${ac_uB}HAVE_UTIME_H${ac_uC}1${ac_uD}
 ${ac_uA}TIME_WITH_SYS_TIME${ac_uB}TIME_WITH_SYS_TIME${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_STRUCT_UTIMBUF${ac_uB}HAVE_STRUCT_UTIMBUF${ac_uC}1${ac_uD}
-${ac_uA}CLOSEDIR_VOID${ac_uB}CLOSEDIR_VOID${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_LIMITS_H${ac_uB}HAVE_LIMITS_H${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_STDLIB_H${ac_uB}HAVE_STDLIB_H${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_STRING_H${ac_uB}HAVE_STRING_H${ac_uC}1${ac_uD}
+${ac_uA}HAVE_DECL_GETENV${ac_uB}HAVE_DECL_GETENV${ac_uC}1${ac_uD}
+${ac_uA}HAVE_DECL_MALLOC${ac_uB}HAVE_DECL_MALLOC${ac_uC}1${ac_uD}
+${ac_uA}FILESYSTEM_ACCEPTS_DRIVE_LETTER_PREFIX${ac_uB}FILESYSTEM_ACCEPTS_DRIVE_LETTER_PREFIX${ac_uC}1${ac_uD}
+${ac_uA}FILESYSTEM_BACKSLASH_IS_FILE_NAME_SEPARATOR${ac_uB}FILESYSTEM_BACKSLASH_IS_FILE_NAME_SEPARATOR${ac_uC}1${ac_uD}
 CEOF
   sed -f $tmp/undefs.sed $tmp/in >$tmp/out
   rm -f $tmp/in
@@ -979,20 +963,13 @@ CEOF
 /^[	 ]*#[	 ]*undef/!b
 t clr
 : clr
-${ac_uA}HAVE_DECL_GETENV${ac_uB}HAVE_DECL_GETENV${ac_uC}1${ac_uD}
-${ac_uA}HAVE_DECL_MALLOC${ac_uB}HAVE_DECL_MALLOC${ac_uC}1${ac_uD}
-${ac_uA}FILESYSTEM_ACCEPTS_DRIVE_LETTER_PREFIX${ac_uB}FILESYSTEM_ACCEPTS_DRIVE_LETTER_PREFIX${ac_uC}1${ac_uD}
-${ac_uA}FILESYSTEM_BACKSLASH_IS_FILE_NAME_SEPARATOR${ac_uB}FILESYSTEM_BACKSLASH_IS_FILE_NAME_SEPARATOR${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_UNISTD_H${ac_uB}HAVE_UNISTD_H${ac_uC}1${ac_uD}
 ${ac_uA}D_INO_IN_DIRENT${ac_uB}D_INO_IN_DIRENT${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_LONG_FILE_NAMES${ac_uB}HAVE_LONG_FILE_NAMES${ac_uC}1${ac_uD}
-${ac_uA}HAVE_PATHCONF${ac_uB}HAVE_PATHCONF${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_VPRINTF${ac_uB}HAVE_VPRINTF${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_STRERROR${ac_uB}HAVE_STRERROR${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_DECL_STRERROR${ac_uB}HAVE_DECL_STRERROR${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_DECL_STRERROR_R${ac_uB}HAVE_DECL_STRERROR_R${ac_uC}0${ac_uD}
-${ac_uA}HAVE_STRERROR_R${ac_uB}HAVE_STRERROR_R${ac_uC}1${ac_uD}
-${ac_uA}STRERROR_R_CHAR_P${ac_uB}STRERROR_R_CHAR_P${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_MEMCHR${ac_uB}HAVE_MEMCHR${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_RMDIR${ac_uB}HAVE_RMDIR${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_STDLIB_H${ac_uB}HAVE_STDLIB_H${ac_uC}1${ac_uD}
@@ -1009,14 +986,21 @@ ${ac_uA}HAVE_MBRTOWC${ac_uB}HAVE_MBRTOWC${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_DECL_FREE${ac_uB}HAVE_DECL_FREE${ac_uC}1${ac_uD}
 ${ac_uA}HAVE__BOOL${ac_uB}HAVE__BOOL${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_STDBOOL_H${ac_uB}HAVE_STDBOOL_H${ac_uC}1${ac_uD}
-${ac_uA}HAVE_STAT_TIMEVAL${ac_uB}HAVE_STAT_TIMEVAL${ac_uC}1${ac_uD}
-${ac_uA}HAVE_PATHCONF${ac_uB}HAVE_PATHCONF${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_LIMITS_H${ac_uB}HAVE_LIMITS_H${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_STRING_H${ac_uB}HAVE_STRING_H${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_UNISTD_H${ac_uB}HAVE_UNISTD_H${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_DECL_FREE${ac_uB}HAVE_DECL_FREE${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_DECL_GETENV${ac_uB}HAVE_DECL_GETENV${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_DECL_MALLOC${ac_uB}HAVE_DECL_MALLOC${ac_uC}1${ac_uD}
+${ac_uA}HAVE_DECL_MKTEMP${ac_uB}HAVE_DECL_MKTEMP${ac_uC}1${ac_uD}
+${ac_uA}HAVE_ISASCII${ac_uB}HAVE_ISASCII${ac_uC}1${ac_uD}
+${ac_uA}HAVE_MEMCMP${ac_uB}HAVE_MEMCMP${ac_uC}1${ac_uD}
+${ac_uA}HAVE_MKTEMP${ac_uB}HAVE_MKTEMP${ac_uC}1${ac_uD}
+${ac_uA}HAVE_RAISE${ac_uB}HAVE_RAISE${ac_uC}1${ac_uD}
+${ac_uA}HAVE_STRERROR${ac_uB}HAVE_STRERROR${ac_uC}1${ac_uD}
+${ac_uA}HAVE_MKDIR${ac_uB}HAVE_MKDIR${ac_uC}1${ac_uD}
+${ac_uA}HAVE_STRNCASECMP${ac_uB}HAVE_STRNCASECMP${ac_uC}1${ac_uD}
+${ac_uA}_LARGEFILE_SOURCE${ac_uB}_LARGEFILE_SOURCE${ac_uC}1${ac_uD}
 CEOF
   sed -f $tmp/undefs.sed $tmp/in >$tmp/out
   rm -f $tmp/in
@@ -1026,35 +1010,19 @@ CEOF
 /^[	 ]*#[	 ]*undef/!b
 t clr
 : clr
-${ac_uA}HAVE_DECL_MKTEMP${ac_uB}HAVE_DECL_MKTEMP${ac_uC}1${ac_uD}
-${ac_uA}HAVE_GETEUID${ac_uB}HAVE_GETEUID${ac_uC}1${ac_uD}
-${ac_uA}HAVE_GETUID${ac_uB}HAVE_GETUID${ac_uC}1${ac_uD}
-${ac_uA}HAVE_ISASCII${ac_uB}HAVE_ISASCII${ac_uC}1${ac_uD}
-${ac_uA}HAVE_MEMCMP${ac_uB}HAVE_MEMCMP${ac_uC}1${ac_uD}
-${ac_uA}HAVE_MKTEMP${ac_uB}HAVE_MKTEMP${ac_uC}1${ac_uD}
-${ac_uA}HAVE_PATHCONF${ac_uB}HAVE_PATHCONF${ac_uC}1${ac_uD}
-${ac_uA}HAVE_RAISE${ac_uB}HAVE_RAISE${ac_uC}1${ac_uD}
-${ac_uA}HAVE_SIGACTION${ac_uB}HAVE_SIGACTION${ac_uC}1${ac_uD}
-${ac_uA}HAVE_SIGPROCMASK${ac_uB}HAVE_SIGPROCMASK${ac_uC}1${ac_uD}
-${ac_uA}HAVE_STRERROR${ac_uB}HAVE_STRERROR${ac_uC}1${ac_uD}
-${ac_uA}HAVE_MKDIR${ac_uB}HAVE_MKDIR${ac_uC}1${ac_uD}
-${ac_uA}HAVE_STRNCASECMP${ac_uB}HAVE_STRNCASECMP${ac_uC}1${ac_uD}
-${ac_uA}_LARGEFILE_SOURCE${ac_uB}_LARGEFILE_SOURCE${ac_uC}1${ac_uD}
-${ac_uA}HAVE_FSEEKO${ac_uB}HAVE_FSEEKO${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_DECL_CLEARERR_UNLOCKED${ac_uB}HAVE_DECL_CLEARERR_UNLOCKED${ac_uC}0${ac_uD}
-${ac_uA}HAVE_DECL_FEOF_UNLOCKED${ac_uB}HAVE_DECL_FEOF_UNLOCKED${ac_uC}1${ac_uD}
-${ac_uA}HAVE_DECL_FERROR_UNLOCKED${ac_uB}HAVE_DECL_FERROR_UNLOCKED${ac_uC}1${ac_uD}
+${ac_uA}HAVE_DECL_FEOF_UNLOCKED${ac_uB}HAVE_DECL_FEOF_UNLOCKED${ac_uC}0${ac_uD}
+${ac_uA}HAVE_DECL_FERROR_UNLOCKED${ac_uB}HAVE_DECL_FERROR_UNLOCKED${ac_uC}0${ac_uD}
 ${ac_uA}HAVE_DECL_FFLUSH_UNLOCKED${ac_uB}HAVE_DECL_FFLUSH_UNLOCKED${ac_uC}0${ac_uD}
-${ac_uA}HAVE_DECL_FGETS_UNLOCKED${ac_uB}HAVE_DECL_FGETS_UNLOCKED${ac_uC}1${ac_uD}
-${ac_uA}HAVE_DECL_FPUTC_UNLOCKED${ac_uB}HAVE_DECL_FPUTC_UNLOCKED${ac_uC}1${ac_uD}
-${ac_uA}HAVE_DECL_FPUTS_UNLOCKED${ac_uB}HAVE_DECL_FPUTS_UNLOCKED${ac_uC}1${ac_uD}
-${ac_uA}HAVE_DECL_FREAD_UNLOCKED${ac_uB}HAVE_DECL_FREAD_UNLOCKED${ac_uC}1${ac_uD}
-${ac_uA}HAVE_DECL_FWRITE_UNLOCKED${ac_uB}HAVE_DECL_FWRITE_UNLOCKED${ac_uC}1${ac_uD}
-${ac_uA}HAVE_DECL_GETC_UNLOCKED${ac_uB}HAVE_DECL_GETC_UNLOCKED${ac_uC}1${ac_uD}
-${ac_uA}HAVE_DECL_GETCHAR_UNLOCKED${ac_uB}HAVE_DECL_GETCHAR_UNLOCKED${ac_uC}1${ac_uD}
-${ac_uA}HAVE_DECL_PUTC_UNLOCKED${ac_uB}HAVE_DECL_PUTC_UNLOCKED${ac_uC}1${ac_uD}
-${ac_uA}HAVE_DECL_PUTCHAR_UNLOCKED${ac_uB}HAVE_DECL_PUTCHAR_UNLOCKED${ac_uC}1${ac_uD}
-${ac_uA}CLOSEDIR_VOID${ac_uB}CLOSEDIR_VOID${ac_uC}1${ac_uD}
+${ac_uA}HAVE_DECL_FGETS_UNLOCKED${ac_uB}HAVE_DECL_FGETS_UNLOCKED${ac_uC}0${ac_uD}
+${ac_uA}HAVE_DECL_FPUTC_UNLOCKED${ac_uB}HAVE_DECL_FPUTC_UNLOCKED${ac_uC}0${ac_uD}
+${ac_uA}HAVE_DECL_FPUTS_UNLOCKED${ac_uB}HAVE_DECL_FPUTS_UNLOCKED${ac_uC}0${ac_uD}
+${ac_uA}HAVE_DECL_FREAD_UNLOCKED${ac_uB}HAVE_DECL_FREAD_UNLOCKED${ac_uC}0${ac_uD}
+${ac_uA}HAVE_DECL_FWRITE_UNLOCKED${ac_uB}HAVE_DECL_FWRITE_UNLOCKED${ac_uC}0${ac_uD}
+${ac_uA}HAVE_DECL_GETC_UNLOCKED${ac_uB}HAVE_DECL_GETC_UNLOCKED${ac_uC}0${ac_uD}
+${ac_uA}HAVE_DECL_GETCHAR_UNLOCKED${ac_uB}HAVE_DECL_GETCHAR_UNLOCKED${ac_uC}0${ac_uD}
+${ac_uA}HAVE_DECL_PUTC_UNLOCKED${ac_uB}HAVE_DECL_PUTC_UNLOCKED${ac_uC}0${ac_uD}
+${ac_uA}HAVE_DECL_PUTCHAR_UNLOCKED${ac_uB}HAVE_DECL_PUTCHAR_UNLOCKED${ac_uC}0${ac_uD}
 ${ac_uA}HAVE_FCNTL_H${ac_uB}HAVE_FCNTL_H${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_UNISTD_H${ac_uB}HAVE_UNISTD_H${ac_uC}1${ac_uD}
 ${ac_uA}HAVE_SETMODE_DOS${ac_uB}HAVE_SETMODE_DOS${ac_uC}1${ac_uD}

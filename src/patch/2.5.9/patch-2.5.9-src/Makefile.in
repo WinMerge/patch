@@ -21,9 +21,8 @@
 #### Start of system configuration section. ####
 
 srcdir = @srcdir@
-VPATH = @srcdir@
 resdir = @top_builddir@res
-vpath %.rc @top_builddir@res
+VPATH = @srcdir@ @srcdir@/pc $(resdir)
 
 @SET_MAKE@
 
@@ -90,7 +89,7 @@ OBJS = patch-res.o $(LIBOBJS) \
 	patch.$(OBJEXT) pch.$(OBJEXT) \
 	quote.$(OBJEXT) quotearg.$(OBJEXT) quotesys.$(OBJEXT) \
 	util.$(OBJEXT) version.$(OBJEXT) xmalloc.$(OBJEXT) hash.$(OBJEXT) \
-	pc_quote.$(OBJEXT)
+	pc_quote.$(OBJEXT) rename.$(OBJEXT)
 HDRS = argmatch.h backupfile.h common.h dirname.h \
 	error.h getopt.h gettext.h \
 	inp.h maketime.h partime.h pch.h \

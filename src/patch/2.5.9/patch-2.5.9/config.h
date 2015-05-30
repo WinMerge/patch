@@ -2,7 +2,7 @@
 /* config.hin.  Generated from configure.ac by autoheader.  */
 
 /* Define to 1 if the `closedir' function returns void instead of `int'. */
-#define CLOSEDIR_VOID 1
+/* #undef CLOSEDIR_VOID */
 
 /* Define if there is a member named d_ino in the struct describing directory
    headers. */
@@ -33,11 +33,11 @@
 
 /* Define to 1 if you have the declaration of `feof_unlocked', and to 0 if you
    don't. */
-#define HAVE_DECL_FEOF_UNLOCKED 1
+#define HAVE_DECL_FEOF_UNLOCKED 0
 
 /* Define to 1 if you have the declaration of `ferror_unlocked', and to 0 if
    you don't. */
-#define HAVE_DECL_FERROR_UNLOCKED 1
+#define HAVE_DECL_FERROR_UNLOCKED 0
 
 /* Define to 1 if you have the declaration of `fflush_unlocked', and to 0 if
    you don't. */
@@ -45,19 +45,19 @@
 
 /* Define to 1 if you have the declaration of `fgets_unlocked', and to 0 if
    you don't. */
-#define HAVE_DECL_FGETS_UNLOCKED 1
+#define HAVE_DECL_FGETS_UNLOCKED 0
 
 /* Define to 1 if you have the declaration of `fputc_unlocked', and to 0 if
    you don't. */
-#define HAVE_DECL_FPUTC_UNLOCKED 1
+#define HAVE_DECL_FPUTC_UNLOCKED 0
 
 /* Define to 1 if you have the declaration of `fputs_unlocked', and to 0 if
    you don't. */
-#define HAVE_DECL_FPUTS_UNLOCKED 1
+#define HAVE_DECL_FPUTS_UNLOCKED 0
 
 /* Define to 1 if you have the declaration of `fread_unlocked', and to 0 if
    you don't. */
-#define HAVE_DECL_FREAD_UNLOCKED 1
+#define HAVE_DECL_FREAD_UNLOCKED 0
 
 /* Define to 1 if you have the declaration of `free', and to 0 if you don't.
    */
@@ -65,15 +65,15 @@
 
 /* Define to 1 if you have the declaration of `fwrite_unlocked', and to 0 if
    you don't. */
-#define HAVE_DECL_FWRITE_UNLOCKED 1
+#define HAVE_DECL_FWRITE_UNLOCKED 0
 
 /* Define to 1 if you have the declaration of `getchar_unlocked', and to 0 if
    you don't. */
-#define HAVE_DECL_GETCHAR_UNLOCKED 1
+#define HAVE_DECL_GETCHAR_UNLOCKED 0
 
 /* Define to 1 if you have the declaration of `getc_unlocked', and to 0 if you
    don't. */
-#define HAVE_DECL_GETC_UNLOCKED 1
+#define HAVE_DECL_GETC_UNLOCKED 0
 
 /* Define to 1 if you have the declaration of `getenv', and to 0 if you don't.
    */
@@ -89,11 +89,11 @@
 
 /* Define to 1 if you have the declaration of `putchar_unlocked', and to 0 if
    you don't. */
-#define HAVE_DECL_PUTCHAR_UNLOCKED 1
+#define HAVE_DECL_PUTCHAR_UNLOCKED 0
 
 /* Define to 1 if you have the declaration of `putc_unlocked', and to 0 if you
    don't. */
-#define HAVE_DECL_PUTC_UNLOCKED 1
+#define HAVE_DECL_PUTC_UNLOCKED 0
 
 /* Define to 1 if you have the declaration of `strerror', and to 0 if you
    don't. */
@@ -114,13 +114,13 @@
 #define HAVE_FCNTL_H 1
 
 /* Define to 1 if fseeko (and presumably ftello) exists and is declared. */
-#define HAVE_FSEEKO 1
+/* #undef HAVE_FSEEKO */
 
 /* Define to 1 if you have the `geteuid' function. */
-#define HAVE_GETEUID 1
+/* #undef HAVE_GETEUID */
 
 /* Define to 1 if you have the `getuid' function. */
-#define HAVE_GETUID 1
+/* #undef HAVE_GETUID */
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
@@ -169,7 +169,7 @@
 /* #undef HAVE_NDIR_H */
 
 /* Define to 1 if you have the `pathconf' function. */
-#define HAVE_PATHCONF 1
+/* #undef HAVE_PATHCONF */
 
 /* Define to 1 if you have the `raise' function. */
 #define HAVE_RAISE 1
@@ -185,10 +185,10 @@
 #define HAVE_SETMODE_DOS 1
 
 /* Define to 1 if you have the `sigaction' function. */
-#define HAVE_SIGACTION 1
+/* #undef HAVE_SIGACTION */
 
 /* Define to 1 if you have the `sigprocmask' function. */
-#define HAVE_SIGPROCMASK 1
+/* #undef HAVE_SIGPROCMASK */
 
 /* Define to 1 if you have the `sigsetmask' function. */
 /* #undef HAVE_SIGSETMASK */
@@ -209,7 +209,7 @@
 #define HAVE_STRERROR 1
 
 /* Define to 1 if you have the `strerror_r' function. */
-#define HAVE_STRERROR_R 1
+/* #undef HAVE_STRERROR_R */
 
 /* Define to 1 if you have the <strings.h> header file. */
 #define HAVE_STRINGS_H 1
@@ -233,7 +233,7 @@
 /* #undef HAVE_SYS_NDIR_H */
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
-#define HAVE_SYS_STAT_H 1
+/* #undef HAVE_SYS_STAT_H */
 
 /* Define to 1 if you have the <sys/time.h> header file. */
 #define HAVE_SYS_TIME_H 1
@@ -290,7 +290,7 @@
 #define PACKAGE_VERSION "2.5.9"
 
 /* Define to 1 if the C compiler supports function prototypes. */
-#define PROTOTYPES 1
+/* #undef PROTOTYPES */
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #define RETSIGTYPE void
@@ -302,7 +302,7 @@
 #define STDC_HEADERS 1
 
 /* Define to 1 if strerror_r returns char *. */
-#define STRERROR_R_CHAR_P 1
+/* #undef STRERROR_R_CHAR_P */
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #define TIME_WITH_SYS_TIME 1
@@ -339,7 +339,7 @@
 /* #undef _POSIX_SOURCE */
 
 /* Define like PROTOTYPES; this can be used by system headers. */
-#define __PROTOTYPES 1
+/* #undef __PROTOTYPES */
 
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */
@@ -364,21 +364,3 @@
 
 /* Define to `unsigned' if <sys/types.h> does not define. */
 /* #undef size_t */
-/* DJGPP-specific definitions */
-
-#define HAVE_DOS_FILE_NAMES 1
-
-#ifdef WIN32
-# define setmode _setmode
-#endif
-
-#define filename_char_eq(c1,c2) \
-  ({int _c1 = (c1), _c2 = (c2); \
-    (_c1 >= 'A' &&  _c1 <= 'Z' ? tolower(_c1) : _c1) == \
-    (_c2 >= 'A' &&  _c2 <= 'Z' ? tolower(_c2) : _c2); \
-  })
-
-#define DEFAULT_OS_QUOTING_STYLE     dos_nt_quoting()
-#define DEFAULT_OS_QUOTING_STYLE_DCL extern enum quoting_style dos_nt_quoting (void);
-
-#define TMPDIR "c:"

@@ -1,16 +1,17 @@
 diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' patch-2.5.9-orig/Makefile.in patch-2.5.9-src/Makefile.in
 --- patch-2.5.9-orig/Makefile.in	2003-05-20 18:15:48.000000000 +0200
-+++ patch-2.5.9-src/Makefile.in	2006-03-10 17:46:42.781250000 +0100
-@@ -22,6 +22,8 @@
++++ patch-2.5.9-src/Makefile.in	2006-05-02 23:22:27.093750000 +0200
+@@ -21,7 +21,8 @@
+ #### Start of system configuration section. ####
  
  srcdir = @srcdir@
- VPATH = @srcdir@
+-VPATH = @srcdir@
 +resdir = @top_builddir@res
-+vpath %.rc @top_builddir@res
++VPATH = @srcdir@ @srcdir@/pc $(resdir)
  
  @SET_MAKE@
  
-@@ -34,14 +36,23 @@ transform = @program_transform_name@
+@@ -34,14 +35,23 @@ transform = @program_transform_name@
  
  CFLAGS = @CFLAGS@
  CPPFLAGS = @CPPFLAGS@
@@ -36,7 +37,7 @@ diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*
  
  prefix = @prefix@
  exec_prefix = @exec_prefix@
-@@ -62,8 +73,8 @@ CONFIG_STATUS = config.status
+@@ -62,8 +72,8 @@ CONFIG_STATUS = config.status
  SHELL = /bin/sh
  
  LIBSRCS = error.c malloc.c memchr.c mkdir.c \
@@ -47,7 +48,7 @@ diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*
  	addext.c argmatch.c backupfile.c \
  	basename.c dirname.c \
  	getopt.c getopt1.c inp.c \
-@@ -71,19 +82,20 @@ SRCS = $(LIBSRCS) \
+@@ -71,19 +81,20 @@ SRCS = $(LIBSRCS) \
  	patch.c pch.c \
  	quote.c quotearg.c quotesys.c \
  	util.c version.c xmalloc.c
@@ -61,7 +62,7 @@ diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*
  	quote.$(OBJEXT) quotearg.$(OBJEXT) quotesys.$(OBJEXT) \
 -	util.$(OBJEXT) version.$(OBJEXT) xmalloc.$(OBJEXT)
 +	util.$(OBJEXT) version.$(OBJEXT) xmalloc.$(OBJEXT) hash.$(OBJEXT) \
-+	pc_quote.$(OBJEXT)
++	pc_quote.$(OBJEXT) rename.$(OBJEXT)
  HDRS = argmatch.h backupfile.h common.h dirname.h \
  	error.h getopt.h gettext.h \
  	inp.h maketime.h partime.h pch.h \
@@ -71,7 +72,7 @@ diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*
  MISC = AUTHORS COPYING ChangeLog INSTALL Makefile.in NEWS README \
  	aclocal.m4 \
  	config.hin configure configure.ac \
-@@ -105,6 +117,13 @@ installcheck::
+@@ -105,6 +116,13 @@ installcheck::
  COMPILE = $(CC) -c $(CPPFLAGS) $(DEFS) -Ded_PROGRAM=\"$(ed_PROGRAM)\" \
  	-I. -I$(srcdir) $(CFLAGS)
  
@@ -87,7 +88,7 @@ diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*
  
 diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' patch-2.5.9-orig/aclocal.m4 patch-2.5.9-src/aclocal.m4
 --- patch-2.5.9-orig/aclocal.m4	2003-05-19 08:30:52.000000000 +0200
-+++ patch-2.5.9-src/aclocal.m4	2005-03-23 22:28:44.078125000 +0100
++++ patch-2.5.9-src/aclocal.m4	2005-03-23 22:28:44.000000000 +0100
 @@ -1,3 +1,1058 @@
 +dnl aclocal.m4 generated automatically by aclocal 1.4-p6
 +
@@ -1899,7 +1900,7 @@ diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*
 -])
 diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' patch-2.5.9-orig/addext.c patch-2.5.9-src/addext.c
 --- patch-2.5.9-orig/addext.c	2003-05-18 07:30:52.000000000 +0200
-+++ patch-2.5.9-src/addext.c	2005-03-23 23:11:39.046875000 +0100
++++ patch-2.5.9-src/addext.c	2005-03-23 23:11:39.000000000 +0100
 @@ -97,15 +97,64 @@ addext (char *filename, char const *ext,
      {
        /* Live within DOS's 8.3 limit.  */
@@ -1971,7 +1972,7 @@ diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*
    if (slen + extlen <= slen_max)
 diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' patch-2.5.9-orig/backupfile.c patch-2.5.9-src/backupfile.c
 --- patch-2.5.9-orig/backupfile.c	2002-01-16 23:44:24.000000000 +0100
-+++ patch-2.5.9-src/backupfile.c	2006-03-10 17:20:09.453125000 +0100
++++ patch-2.5.9-src/backupfile.c	2006-03-10 17:20:09.000000000 +0100
 @@ -110,6 +110,14 @@ char *malloc ();
  #include "backupfile.h"
  #include "dirname.h"
@@ -2040,8 +2041,39 @@ diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*
  #endif /* HAVE_DIR */
 diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' patch-2.5.9-orig/common.h patch-2.5.9-src/common.h
 --- patch-2.5.9-orig/common.h	2003-05-19 08:57:36.000000000 +0200
-+++ patch-2.5.9-src/common.h	2005-01-04 19:17:48.921875000 +0100
-@@ -289,9 +289,17 @@ void *realloc ();
++++ patch-2.5.9-src/common.h	2006-05-02 23:20:36.015625000 +0200
+@@ -35,6 +35,13 @@
+ #include <time.h>
+ 
+ #include <sys/stat.h>
++#ifdef _WIN32
++# define _stat	_stati64
++# define stat	_stati64
++# define _fstat	_fstati64
++# define fstat	_fstati64
++# define off_t	__int64
++#endif /* _WIN32 */
+ #if ! defined S_ISDIR && defined S_IFDIR
+ # define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+ #endif
+@@ -237,6 +244,16 @@ void *realloc ();
+ #ifndef STDERR_FILENO
+ #define STDERR_FILENO 2
+ #endif
++#ifdef __MINGW32__
++# define fseek fseeko64
++# define fseeko     fseeko64
++# define lseek _lseeki64
++# define lseek64 _lseeki64
++# define ftell ftello64
++# define ftell64 ftello64
++# define tell  _telli64
++# define tell64 _telli64
++#endif
+ #if HAVE_FSEEKO
+   typedef off_t file_offset;
+ # define file_seek fseeko
+@@ -289,9 +306,28 @@ void *realloc ();
  #endif
  
  #ifndef NULL_DEVICE
@@ -2058,10 +2090,21 @@ diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*
 +#else
 +#define TTY_DEVICE (_fileno(stdout))
 +#endif /* _WIN32 */
++#endif
++
++#ifdef _WIN32
++# ifdef MKDIR_TAKES_ONE_ARG
++#  undefine MKDIR_TAKES_ONE_ARG
++# endif
++# ifdef mkdir
++#  undef mkdir
  #endif
++# define mkdir(name, mode) ((_mkdir) (name))
++# define rename(old,new) w32_rename(old,new)
++#endif /* _WIN32 */
 diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' patch-2.5.9-orig/configure patch-2.5.9-src/configure
 --- patch-2.5.9-orig/configure	2003-05-19 08:50:21.000000000 +0200
-+++ patch-2.5.9-src/configure	2005-03-23 22:29:55.109375000 +0100
++++ patch-2.5.9-src/configure	2005-03-23 22:29:55.000000000 +0100
 @@ -1,11 +1,10 @@
  #! /bin/sh
  # Guess values for system-dependent variables and create Makefiles.
@@ -8511,7 +8554,7 @@ diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*
             { { echo "$as_me:$LINENO: error: cannot find input file: $f" >&5
 diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' patch-2.5.9-orig/configure.ac patch-2.5.9-src/configure.ac
 --- patch-2.5.9-orig/configure.ac	2003-05-19 08:44:57.000000000 +0200
-+++ patch-2.5.9-src/configure.ac	2005-03-23 22:28:44.250000000 +0100
++++ patch-2.5.9-src/configure.ac	2005-03-23 22:28:44.000000000 +0100
 @@ -64,6 +64,9 @@ gl_GETOPT
  gl_PREREQ_XMALLOC
  gl_QUOTE
@@ -8524,7 +8567,7 @@ diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*
  AC_DEFUN([jm_PREREQ_ADDEXT],
 diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' patch-2.5.9-orig/patch.c patch-2.5.9-src/patch.c
 --- patch-2.5.9-orig/patch.c	2003-05-20 15:55:03.000000000 +0200
-+++ patch-2.5.9-src/patch.c	2005-07-22 19:36:53.015625000 +0200
++++ patch-2.5.9-src/patch.c	2006-05-02 23:26:13.828125000 +0200
 @@ -135,7 +135,7 @@ main (int argc, char **argv)
      {
        int i = val ? argmatch (val, quoting_style_args, 0, 0) : -1;
@@ -8534,25 +8577,17 @@ diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*
      }
  
      posixly_correct = getenv ("POSIXLY_CORRECT") != 0;
-@@ -319,6 +319,7 @@ main (int argc, char **argv)
+@@ -319,7 +319,6 @@ main (int argc, char **argv)
  		}
  	    }
  	}
-+	printf ("got_hunk = %ld\n", got_hunk);
- 
+-
  	if (!skip_rest_of_patch)
  	  {
-@@ -337,6 +338,7 @@ main (int argc, char **argv)
- 	      }
- 
- 	    /* Finish spewing out the new file.  */
-+		printf ("hunk = %ld\n", hunk);
- 	    assert (hunk);
- 	    if (! spew_output (&outstate))
- 	      {
+ 	    if (got_hunk < 0  &&  using_plan_a)
 diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' patch-2.5.9-orig/pch.c patch-2.5.9-src/pch.c
 --- patch-2.5.9-orig/pch.c	2003-05-20 16:03:17.000000000 +0200
-+++ patch-2.5.9-src/pch.c	2006-04-26 20:54:05.408483500 +0200
++++ patch-2.5.9-src/pch.c	2006-04-26 20:54:05.000000000 +0200
 @@ -1,6 +1,6 @@
  /* reading patches */
  
@@ -8588,7 +8623,7 @@ diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*
  	if ((diff_type == NO_DIFF || diff_type == ED_DIFF) &&
 diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' patch-2.5.9-orig/quotearg.c patch-2.5.9-src/quotearg.c
 --- patch-2.5.9-orig/quotearg.c	2002-11-23 07:45:49.000000000 +0100
-+++ patch-2.5.9-src/quotearg.c	2005-03-24 00:18:53.953125000 +0100
++++ patch-2.5.9-src/quotearg.c	2005-03-24 00:18:53.000000000 +0100
 @@ -25,6 +25,14 @@
  
  #include "xalloc.h"
@@ -8795,7 +8830,7 @@ diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*
    };
 diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' patch-2.5.9-orig/quotesys.c patch-2.5.9-src/quotesys.c
 --- patch-2.5.9-orig/quotesys.c	1998-03-15 15:44:47.000000000 +0100
-+++ patch-2.5.9-src/quotesys.c	2005-03-23 23:11:39.265625000 +0100
++++ patch-2.5.9-src/quotesys.c	2005-03-23 23:11:39.000000000 +0100
 @@ -37,6 +37,12 @@ quote_system_arg (quoted, arg)
    char const *a;
    size_t len = 0;
@@ -8817,7 +8852,7 @@ diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*
  }
 diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian -x '*.po' -x '*.pot' patch-2.5.9-orig/util.c patch-2.5.9-src/util.c
 --- patch-2.5.9-orig/util.c	2003-05-20 16:04:53.000000000 +0200
-+++ patch-2.5.9-src/util.c	2006-03-10 17:24:47.781250000 +0100
++++ patch-2.5.9-src/util.c	2006-03-10 17:24:47.000000000 +0100
 @@ -45,9 +45,21 @@
  # define raise(sig) kill (getpid (), sig)
  #endif
