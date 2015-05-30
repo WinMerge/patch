@@ -1,0 +1,155 @@
+diff -ipuwrN -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-orig/Makefile.in patch-2.5.9-src/Makefile.in
+--- patch-2.5.9-orig/Makefile.in	2003-05-20 18:15:48.000000000 +0200
++++ patch-2.5.9-src/Makefile.in	2005-01-03 21:03:38.359375000 +0100
+@@ -22,6 +22,8 @@
+ 
+ srcdir = @srcdir@
+ VPATH = @srcdir@
++resdir = @top_builddir@res
++vpath %.rc @top_builddir@res
+ 
+ @SET_MAKE@
+ 
+@@ -34,14 +36,17 @@ transform = @program_transform_name@
+ 
+ CFLAGS = @CFLAGS@
+ CPPFLAGS = @CPPFLAGS@
+-DEFS = @DEFS@
++DEFS = -DINSTALLDIR=\"$(prefix)\"  @DEFS@
+ EXEEXT = @EXEEXT@
+-LDFLAGS = @LDFLAGS@
++LDFLAGS = @LDFLAGS@	-Wl,--major-image-version=$(MAJOR) -Wl,--minor-image-version=$(MINOR)
+ LIBOBJS = @LIBOBJS@
+ LIBS = @LIBS@
+ OBJEXT = @OBJEXT@
+ PACKAGE_NAME = @PACKAGE_NAME@
+ PACKAGE_VERSION = @PACKAGE_VERSION@
++VERSION = $(PACKAGE_VERSION)
++MAJOR=$(shell echo $(VERSION) | sed -e "s/\\..*$$//")
++MINOR=$(shell echo $(VERSION) | sed -e "s/^[^\\.]*\\.0*\\([^.]*\\).*$$/\\1/")
+ 
+ prefix = @prefix@
+ exec_prefix = @exec_prefix@
+@@ -63,7 +68,7 @@ SHELL = /bin/sh
+ 
+ LIBSRCS = error.c malloc.c memchr.c mkdir.c \
+ 	realloc.c rmdir.c strcasecmp.c strncasecmp.c
+-SRCS = $(LIBSRCS) \
++SRCS = patch-res.rc $(LIBSRCS) \
+ 	addext.c argmatch.c backupfile.c \
+ 	basename.c dirname.c \
+ 	getopt.c getopt1.c inp.c \
+@@ -71,7 +76,7 @@ SRCS = $(LIBSRCS) \
+ 	patch.c pch.c \
+ 	quote.c quotearg.c quotesys.c \
+ 	util.c version.c xmalloc.c
+-OBJS = $(LIBOBJS) \
++OBJS = patch-res.o $(LIBOBJS) \
+ 	addext.$(OBJEXT) argmatch.$(OBJEXT) backupfile.$(OBJEXT) \
+ 	basename.$(OBJEXT) dirname.$(OBJEXT) \
+ 	getopt.$(OBJEXT) getopt1.$(OBJEXT) inp.$(OBJEXT) \
+@@ -105,6 +110,13 @@ installcheck::
+ COMPILE = $(CC) -c $(CPPFLAGS) $(DEFS) -Ded_PROGRAM=\"$(ed_PROGRAM)\" \
+ 	-I. -I$(srcdir) $(CFLAGS)
+ 
++.SUFFIXES:
++.SUFFIXES: .c .o .exe .rc
++
++# Rule to make compiled resource (Windows)
++.rc.o:
++	windres --include-dir $(resdir) -i $< -o $@
++
+ .c.$(OBJEXT):
+ 	$(COMPILE) $<
+ 
+diff -ipuwrN -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-orig/common.h patch-2.5.9-src/common.h
+--- patch-2.5.9-orig/common.h	2003-05-19 08:57:36.000000000 +0200
++++ patch-2.5.9-src/common.h	2004-06-13 13:25:32.484375000 +0200
+@@ -293,5 +293,9 @@ void *realloc ();
+ #endif
+ 
+ #ifndef TTY_DEVICE
++#ifndef _WIN32
+ #define TTY_DEVICE "/dev/tty"
++#else
++#define TTY_DEVICE (_fileno(stdout))
++#endif /* _WIN32 */
+ #endif
+diff -ipuwrN -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-orig/inp.c patch-2.5.9-src/inp.c
+--- patch-2.5.9-orig/inp.c	2003-05-20 15:58:02.000000000 +0200
++++ patch-2.5.9-src/inp.c	2004-07-22 13:22:22.250000000 +0200
+@@ -340,7 +340,8 @@ plan_b (char const *filename)
+     pfatal ("Can't open file %s", quotearg (filename));
+   exclusive = TMPINNAME_needs_removal ? 0 : O_EXCL;
+   TMPINNAME_needs_removal = 1;
+-  tifd = create_file (TMPINNAME, O_RDWR | O_BINARY | exclusive, (mode_t) 0);
++  tifd = create_file (TMPINNAME, O_RDWR | binary_transput | exclusive, (mode_t) 0);
++  printf ("TMPINNAME: %s\n", TMPINNAME);
+   i = 0;
+   len = 0;
+   maxlen = 1;
+diff -ipuwrN -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-orig/pch.c patch-2.5.9-src/pch.c
+--- patch-2.5.9-orig/pch.c	2003-05-20 16:03:17.000000000 +0200
++++ patch-2.5.9-src/pch.c	2004-07-22 13:35:04.406250000 +0200
+@@ -121,6 +121,7 @@ open_patch_file (char const *filename)
+ 	  pfatal ("fstat");
+ 	if (S_ISREG (st.st_mode) && (stdin_pos = file_tell (stdin)) != -1)
+ 	  {
++		printf ("pfp = stdin: %p\n", stdin);
+ 	    pfp = stdin;
+ 	    file_pos = stdin_pos;
+ 	  }
+@@ -130,9 +131,11 @@ open_patch_file (char const *filename)
+ 	    int exclusive = TMPPATNAME_needs_removal ? 0 : O_EXCL;
+ 	    TMPPATNAME_needs_removal = 1;
+ 	    pfp = fdopen (create_file (TMPPATNAME,
+-				       O_RDWR | O_BINARY | exclusive,
++				       O_RDWR | binary_transput | exclusive,
+ 				       (mode_t) 0),
+-			  "w+b");
++			  binary_transput ? "w+b" : "w+");
++//			  "w+b");
++		printf ("TMPPATNAME: %s\n", TMPPATNAME);
+ 	    if (!pfp)
+ 	      pfatal ("Can't open stream for file %s", quotearg (TMPPATNAME));
+ 	    for (st.st_size = 0;
+diff -ipuwrN -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-orig/util.c patch-2.5.9-src/util.c
+--- patch-2.5.9-orig/util.c	2003-05-20 16:04:53.000000000 +0200
++++ patch-2.5.9-src/util.c	2004-07-22 13:31:17.171875000 +0200
+@@ -581,7 +581,12 @@ ask (char const *format, ...)
+ 	 POSIX.1-2001 XCU line 26599 requires that we read /dev/tty,
+ 	 though.  */
+       ttyfd = (posixly_correct || isatty (STDOUT_FILENO)
++#ifndef _WIN32
+ 	       ? open (TTY_DEVICE, O_RDONLY)
++#else /* _WIN32 */
++			? _fileno(stdout)
++#endif /* _WIN32 */
++
+ 	       : -1);
+     }
+ 
+@@ -595,6 +600,7 @@ ask (char const *format, ...)
+   else
+     {
+       size_t s = 0;
++#ifndef _WIN32
+       while ((r = read (ttyfd, buf + s, bufsize - 1 - s)) == bufsize - 1 - s
+ 	     && buf[bufsize - 2] != '\n')
+ 	{
+@@ -604,6 +610,15 @@ ask (char const *format, ...)
+ 	  if (!buf)
+ 	    memory_fatal ();
+ 	}
++#else /* _WIN32 */
++	{
++	  char wbuf[80]={80};
++	  _cgets(wbuf);
++	  r = wbuf[1];
++	  buf = realloc(buf, r+2);
++	  strcpy(buf, &wbuf[2]);
++	}	  
++#endif /* _WIN32 */
+       if (r == 0)
+ 	printf ("EOF\n");
+       else if (r < 0)
