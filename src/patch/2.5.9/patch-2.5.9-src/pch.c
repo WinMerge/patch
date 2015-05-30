@@ -121,7 +121,6 @@ open_patch_file (char const *filename)
 	  pfatal ("fstat");
 	if (S_ISREG (st.st_mode) && (stdin_pos = file_tell (stdin)) != -1)
 	  {
-//		printf ("pfp = stdin: %p\n", stdin);
 		pfp = stdin;
 	    file_pos = stdin_pos;
 	  }
@@ -134,7 +133,6 @@ open_patch_file (char const *filename)
 				       O_RDWR | O_BINARY | exclusive,
 				       (mode_t) 0),
 			  "w+b");
-		printf ("TMPPATNAME: %s\n", TMPPATNAME);
 	    if (!pfp)
 	      pfatal ("Can't open stream for file %s", quotearg (TMPPATNAME));
 	    for (st.st_size = 0;
@@ -158,8 +156,6 @@ open_patch_file (char const *filename)
 	  pfatal ("fstat");
       }
 	p_filesize = st.st_size;
-	printf ("p_filesize = %ld\n", p_filesize);
-	printf ("file_pos = %ld\n", file_pos);
     if (p_filesize != (file_offset) p_filesize)
       fatal ("patch file is too long");
     next_intuit_at (file_pos, (LINENUM) 1);
@@ -857,14 +853,12 @@ another_hunk (enum diff difftype, bool rev)
 	p_end--;
     }
     assert(p_end == -1);
-	printf ("p_end = %ld\n", p_end);
     p_efake = -1;
 
     p_max = hunkmax;			/* gets reduced when --- found */
     if (difftype == CONTEXT_DIFF || difftype == NEW_CONTEXT_DIFF) {
 	file_offset line_beginning = file_tell (pfp);
 					/* file pos of the current line */
-	printf ("line_beginning = %ld\n", line_beginning);
 	LINENUM repl_beginning = 0;	/* index of --- line */
 	register LINENUM fillcnt = 0;	/* #lines of missing ptrn or repl */
 	register LINENUM fillsrc;	/* index of first line to copy */
@@ -888,7 +882,6 @@ another_hunk (enum diff difftype, bool rev)
 	fillsrc = filldst = repl_patch_line = repl_context = 0;
 
 	chars_read = get_line ();
-	printf ("chars_read = %ld\n", chars_read);
 	if (chars_read == (size_t) -1
 	    || chars_read <= 8
 	    || strncmp (buf, "********", 8) != 0) {
@@ -1259,17 +1252,14 @@ another_hunk (enum diff difftype, bool rev)
     else if (difftype == UNI_DIFF) {
 	file_offset line_beginning = file_tell (pfp);
 					/* file pos of the current line */
-	printf ("line_beginning = %ld\n", line_beginning);
 	register LINENUM fillsrc;	/* index of old lines */
 	register LINENUM filldst;	/* index of new lines */
 	char ch = '\0';
 
 	chars_read = get_line ();
-	printf ("chars_read = %ld\n", chars_read);
 	if (chars_read == (size_t) -1
 	    || chars_read <= 4
 	    || strncmp (buf, "@@ -", 4) != 0) {
-printf ("buf = %s\n", buf);
 	    next_intuit_at(line_beginning,p_input_line);
 	    return chars_read == (size_t) -1 ? -1 : 0;
 	}
@@ -1322,7 +1312,6 @@ printf ("buf = %s\n", buf);
 	p_hunk_beg = p_input_line + 1;
 	while (fillsrc <= p_ptrn_lines || filldst <= p_end) {
 	    chars_read = get_line ();
-printf ("chars_read = %ld\n", chars_read);
 	    if (!chars_read) {
 		if (p_max - filldst < 3) {
 		    strcpy (buf, " \n");  /* assume blank lines got chopped */

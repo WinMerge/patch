@@ -40,7 +40,7 @@ DEFS = -DINSTALLDIR=\"$(prefix)\"  -DINSTALLDIR=\"$(prefix)\"  -DINSTALLDIR=\"$(
 EXEEXT = .exe
 LDFLAGS =  -Wl,-s -Wl,--force-exe-suffix -Wl,--enable-auto-import -Wl,--enable-runtime-pseudo-reloc -Wl,--allow-multiple-definition -Wl,--enable-stdcall-fixup -LD:/Progra~1/GnuWin32/lib   	-Wl,--major-image-version=$(MAJOR) -Wl,--minor-image-version=$(MINOR)
 LIBOBJS = 
-LIBS =  -Wl,-s  -LD:/Progra~1/GnuWin32/lib -lgw32c  -liberty -lintl -liconv -lwsock32 -lole32 -luuid -lmsvcp60  
+LIBS =  -Wl,-s  -LD:/Progra~1/GnuWin32/lib -lgw32c  -liberty -lintl -lwsock32 -lole32 -luuid -lmsvcp60  
 OBJEXT = o
 PACKAGE_NAME = patch
 PACKAGE_VERSION = 2.5.9
