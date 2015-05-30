@@ -1,0 +1,70 @@
+diff -cr -x config.log -x config.status -x config.cache -x *.Po -I patch-2.5.7-orig* patch-2.5.7-orig/common.h patch-2.5.7/common.h
+*** patch-2.5.7-orig/common.h	Tue May 28 09:12:04 2002
+--- patch-2.5.7/common.h	Sat Jun  1 14:04:40 2002
+***************
+*** 314,320 ****
+--- 314,324 ----
+  #endif
+  
+  #ifndef TTY_DEVICE
++ #ifndef __WIN32__
+  #define TTY_DEVICE "/dev/tty"
++ #else
++ #define TTY_DEVICE (_fileno(stdout))
++ #endif /* __WIN32_ */
+  #endif
+  
+  /* The official name of this program (e.g., no `g' prefix).  */
+diff -cr -x config.log -x config.status -x config.cache -x *.Po -I patch-2.5.7-orig* patch-2.5.7-orig/util.c patch-2.5.7/util.c
+*** patch-2.5.7-orig/util.c	Tue May 28 09:12:04 2002
+--- patch-2.5.7/util.c	Sat Jun  1 14:04:40 2002
+***************
+*** 578,584 ****
+  	 POSIX.1-2001 XCU line 26599 requires that we read /dev/tty,
+  	 though.  */
+        ttyfd = (posixly_correct || isatty (STDOUT_FILENO)
+! 	       ? open (TTY_DEVICE, O_RDONLY)
+  	       : -1);
+      }
+  
+--- 578,589 ----
+  	 POSIX.1-2001 XCU line 26599 requires that we read /dev/tty,
+  	 though.  */
+        ttyfd = (posixly_correct || isatty (STDOUT_FILENO)
+! #ifndef __WIN32__
+! 			? open (TTY_DEVICE, O_RDONLY)
+! #else /* __WIN32__ */
+! 			? _fileno(stdout)
+! #endif /* __WIN32__ */
+! 
+  	       : -1);
+      }
+  
+***************
+*** 592,597 ****
+--- 597,603 ----
+    else
+      {
+        size_t s = 0;
++ #ifndef __WIN32__
+        while ((r = read (ttyfd, buf + s, bufsize - 1 - s)) == bufsize - 1 - s
+  	     && buf[bufsize - 2] != '\n')
+  	{
+***************
+*** 601,606 ****
+--- 607,621 ----
+  	  if (!buf)
+  	    memory_fatal ();
+  	}
++ #else /* __WIN32__ */
++ 	{
++ 	  char wbuf[80]={80};
++ 	  _cgets(wbuf);
++ 	  r = wbuf[1];
++ 	  buf = realloc(buf, r+2);
++ 	  strcpy(buf, &wbuf[2]);
++ 	}	  
++ #endif /* __WIN32__ */
+        if (r == 0)
+  	printf ("EOF\n");
+        else if (r < 0)

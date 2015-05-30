@@ -1,0 +1,20 @@
+export ac_cv_func_rename=no
+
+.PHONY: all
+all:
+#	./configure --prefix=c:/progra~1/Patch
+
+	if ! [ -e makefile.orig ]; then \
+	cp -fp makefile makefile.orig; \
+	fi
+	sed -f makefile.sed makefile.orig >makefile
+
+	if ! [ -e config.h.orig ]; then \
+	cp -fp config.h config.h.orig; \
+	fi
+	sed -f config.h.sed config.h.orig >config.h
+
+#	make all
+#	make check
+#	make install prefix=c:/temp/ed
+                                 
