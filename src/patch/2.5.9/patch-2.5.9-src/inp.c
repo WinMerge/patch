@@ -340,8 +340,7 @@ plan_b (char const *filename)
     pfatal ("Can't open file %s", quotearg (filename));
   exclusive = TMPINNAME_needs_removal ? 0 : O_EXCL;
   TMPINNAME_needs_removal = 1;
-  tifd = create_file (TMPINNAME, O_RDWR | binary_transput | exclusive, (mode_t) 0);
-//  printf ("TMPINNAME: %s\n", TMPINNAME);
+  tifd = create_file (TMPINNAME, O_RDWR | O_BINARY | exclusive, (mode_t) 0);
   i = 0;
   len = 0;
   maxlen = 1;

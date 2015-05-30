@@ -1,4 +1,4 @@
-diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-orig/Makefile.in patch-2.5.9-src/Makefile.in
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian patch-2.5.9-orig/Makefile.in patch-2.5.9-src/Makefile.in
 --- patch-2.5.9-orig/Makefile.in	2003-05-20 18:15:48.000000000 +0200
 +++ patch-2.5.9-src/Makefile.in	2005-03-23 23:58:37.078125000 +0100
 @@ -22,6 +22,8 @@
@@ -81,7 +81,7 @@ diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-ori
  .c.$(OBJEXT):
  	$(COMPILE) $<
  
-diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-orig/aclocal.m4 patch-2.5.9-src/aclocal.m4
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian patch-2.5.9-orig/aclocal.m4 patch-2.5.9-src/aclocal.m4
 --- patch-2.5.9-orig/aclocal.m4	2003-05-19 08:30:52.000000000 +0200
 +++ patch-2.5.9-src/aclocal.m4	2005-03-23 22:28:44.078125000 +0100
 @@ -1,3 +1,1058 @@
@@ -1893,7 +1893,7 @@ diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-ori
 -  AC_REQUIRE([AC_HEADER_STDC])
 -  AC_CHECK_HEADERS_ONCE(string.h)
 -])
-diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-orig/addext.c patch-2.5.9-src/addext.c
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian patch-2.5.9-orig/addext.c patch-2.5.9-src/addext.c
 --- patch-2.5.9-orig/addext.c	2003-05-18 07:30:52.000000000 +0200
 +++ patch-2.5.9-src/addext.c	2005-03-23 23:11:39.046875000 +0100
 @@ -97,15 +97,64 @@ addext (char *filename, char const *ext,
@@ -1965,7 +1965,7 @@ diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-ori
      }
  
    if (slen + extlen <= slen_max)
-diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-orig/backupfile.c patch-2.5.9-src/backupfile.c
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian patch-2.5.9-orig/backupfile.c patch-2.5.9-src/backupfile.c
 --- patch-2.5.9-orig/backupfile.c	2002-01-16 23:44:24.000000000 +0100
 +++ patch-2.5.9-src/backupfile.c	2005-03-23 23:11:39.093750000 +0100
 @@ -191,7 +191,11 @@ max_backup_version (const char *file, co
@@ -2019,7 +2019,7 @@ diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-ori
    return version;
  }
  #endif /* HAVE_DIR */
-diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-orig/common.h patch-2.5.9-src/common.h
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian patch-2.5.9-orig/common.h patch-2.5.9-src/common.h
 --- patch-2.5.9-orig/common.h	2003-05-19 08:57:36.000000000 +0200
 +++ patch-2.5.9-src/common.h	2005-01-04 19:17:48.921875000 +0100
 @@ -289,9 +289,17 @@ void *realloc ();
@@ -2040,7 +2040,7 @@ diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-ori
 +#define TTY_DEVICE (_fileno(stdout))
 +#endif /* _WIN32 */
  #endif
-diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-orig/configure patch-2.5.9-src/configure
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian patch-2.5.9-orig/configure patch-2.5.9-src/configure
 --- patch-2.5.9-orig/configure	2003-05-19 08:50:21.000000000 +0200
 +++ patch-2.5.9-src/configure	2005-03-23 22:29:55.109375000 +0100
 @@ -1,11 +1,10 @@
@@ -8490,7 +8490,7 @@ diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-ori
           else
             # /dev/null tree
             { { echo "$as_me:$LINENO: error: cannot find input file: $f" >&5
-diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-orig/configure.ac patch-2.5.9-src/configure.ac
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian patch-2.5.9-orig/configure.ac patch-2.5.9-src/configure.ac
 --- patch-2.5.9-orig/configure.ac	2003-05-19 08:44:57.000000000 +0200
 +++ patch-2.5.9-src/configure.ac	2005-03-23 22:28:44.250000000 +0100
 @@ -64,6 +64,9 @@ gl_GETOPT
@@ -8503,20 +8503,7 @@ diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-ori
  
  dnl This should be in gnulib, but isn't for some reason.
  AC_DEFUN([jm_PREREQ_ADDEXT],
-diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-orig/inp.c patch-2.5.9-src/inp.c
---- patch-2.5.9-orig/inp.c	2003-05-20 15:58:02.000000000 +0200
-+++ patch-2.5.9-src/inp.c	2005-01-04 19:19:15.812500000 +0100
-@@ -340,7 +340,8 @@ plan_b (char const *filename)
-     pfatal ("Can't open file %s", quotearg (filename));
-   exclusive = TMPINNAME_needs_removal ? 0 : O_EXCL;
-   TMPINNAME_needs_removal = 1;
--  tifd = create_file (TMPINNAME, O_RDWR | O_BINARY | exclusive, (mode_t) 0);
-+  tifd = create_file (TMPINNAME, O_RDWR | binary_transput | exclusive, (mode_t) 0);
-+//  printf ("TMPINNAME: %s\n", TMPINNAME);
-   i = 0;
-   len = 0;
-   maxlen = 1;
-diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-orig/patch.c patch-2.5.9-src/patch.c
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian patch-2.5.9-orig/patch.c patch-2.5.9-src/patch.c
 --- patch-2.5.9-orig/patch.c	2003-05-20 15:55:03.000000000 +0200
 +++ patch-2.5.9-src/patch.c	2005-03-23 23:11:39.140625000 +0100
 @@ -135,7 +135,7 @@ main (int argc, char **argv)
@@ -8528,9 +8515,9 @@ diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-ori
      }
  
      posixly_correct = getenv ("POSIXLY_CORRECT") != 0;
-diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-orig/pch.c patch-2.5.9-src/pch.c
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian patch-2.5.9-orig/pch.c patch-2.5.9-src/pch.c
 --- patch-2.5.9-orig/pch.c	2003-05-20 16:03:17.000000000 +0200
-+++ patch-2.5.9-src/pch.c	2005-03-23 22:28:44.250000000 +0100
++++ patch-2.5.9-src/pch.c	2005-07-21 22:39:58.875000000 +0200
 @@ -1,6 +1,6 @@
  /* reading patches */
  
@@ -8547,21 +8534,15 @@ diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-ori
  	    pfp = stdin;
  	    file_pos = stdin_pos;
  	  }
-@@ -130,9 +131,11 @@ open_patch_file (char const *filename)
- 	    int exclusive = TMPPATNAME_needs_removal ? 0 : O_EXCL;
- 	    TMPPATNAME_needs_removal = 1;
- 	    pfp = fdopen (create_file (TMPPATNAME,
--				       O_RDWR | O_BINARY | exclusive,
-+				       O_RDWR | binary_transput | exclusive,
+@@ -133,6 +134,7 @@ open_patch_file (char const *filename)
+ 				       O_RDWR | O_BINARY | exclusive,
  				       (mode_t) 0),
--			  "w+b");
-+			  binary_transput ? "w+b" : "w+");
-+//			  "w+b");
+ 			  "w+b");
 +		printf ("TMPPATNAME: %s\n", TMPPATNAME);
  	    if (!pfp)
  	      pfatal ("Can't open stream for file %s", quotearg (TMPPATNAME));
  	    for (st.st_size = 0;
-@@ -366,10 +369,16 @@ intuit_diff_type (void)
+@@ -366,10 +368,16 @@ intuit_diff_type (void)
  	if (!stars_last_line && strnEQ(s, "*** ", 4))
  	    name[OLD] = fetchname (s+4, strippath, &p_timestamp[OLD]);
  	else if (strnEQ(s, "+++ ", 4))
@@ -8578,7 +8559,7 @@ diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-ori
  	else if (strnEQ(s, "Prereq:", 7)) {
  	    for (t = s + 7;  ISSPACE ((unsigned char) *t);  t++)
  	      continue;
-@@ -409,6 +418,7 @@ intuit_diff_type (void)
+@@ -409,6 +417,7 @@ intuit_diff_type (void)
  		    p_timestamp[NEW] = timestamp;
  		    p_rfc934_nesting = (t - s) >> 1;
  		  }
@@ -8586,7 +8567,7 @@ diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-ori
  	      }
  	  }
  	if ((diff_type == NO_DIFF || diff_type == ED_DIFF) &&
-diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-orig/quotearg.c patch-2.5.9-src/quotearg.c
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian patch-2.5.9-orig/quotearg.c patch-2.5.9-src/quotearg.c
 --- patch-2.5.9-orig/quotearg.c	2002-11-23 07:45:49.000000000 +0100
 +++ patch-2.5.9-src/quotearg.c	2005-03-24 00:18:53.953125000 +0100
 @@ -25,6 +25,14 @@
@@ -8775,7 +8756,7 @@ diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-ori
    if (len < buffersize)
      buffer[len] = '\0';
    return len;
-diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-orig/quotearg.h patch-2.5.9-src/quotearg.h
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian patch-2.5.9-orig/quotearg.h patch-2.5.9-src/quotearg.h
 --- patch-2.5.9-orig/quotearg.h	2002-11-23 07:45:22.000000000 +0100
 +++ patch-2.5.9-src/quotearg.h	2005-03-23 23:39:15.000000000 +0100
 @@ -27,11 +27,14 @@
@@ -8793,7 +8774,7 @@ diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-ori
      locale_quoting_style,	/* --quoting-style=locale */
      clocale_quoting_style	/* --quoting-style=clocale */
    };
-diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-orig/quotesys.c patch-2.5.9-src/quotesys.c
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian patch-2.5.9-orig/quotesys.c patch-2.5.9-src/quotesys.c
 --- patch-2.5.9-orig/quotesys.c	1998-03-15 15:44:47.000000000 +0100
 +++ patch-2.5.9-src/quotesys.c	2005-03-23 23:11:39.265625000 +0100
 @@ -37,6 +37,12 @@ quote_system_arg (quoted, arg)
@@ -8815,7 +8796,7 @@ diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-ori
      }
 +#endif /* nonposix_quote_system_arg */
  }
-diff -ipuwr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' patch-2.5.9-orig/util.c patch-2.5.9-src/util.c
+diff -ipuwr --binary --strip-trailing-cr -x '*.bak' -x '*.orig' -x '*.rej' -x '*.new' -x '*~' -x debian patch-2.5.9-orig/util.c patch-2.5.9-src/util.c
 --- patch-2.5.9-orig/util.c	2003-05-20 16:04:53.000000000 +0200
 +++ patch-2.5.9-src/util.c	2005-03-23 22:28:44.296875000 +0100
 @@ -45,9 +45,17 @@

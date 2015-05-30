@@ -131,16 +131,15 @@ open_patch_file (char const *filename)
 	    int exclusive = TMPPATNAME_needs_removal ? 0 : O_EXCL;
 	    TMPPATNAME_needs_removal = 1;
 	    pfp = fdopen (create_file (TMPPATNAME,
-				       O_RDWR | binary_transput | exclusive,
+				       O_RDWR | O_BINARY | exclusive,
 				       (mode_t) 0),
-			  binary_transput ? "w+b" : "w+");
-//			  "w+b");
+			  "w+b");
 		printf ("TMPPATNAME: %s\n", TMPPATNAME);
 	    if (!pfp)
 	      pfatal ("Can't open stream for file %s", quotearg (TMPPATNAME));
 	    for (st.st_size = 0;
-		 (charsread = fread (buf, 1, bufsize, stdin)) != 0;
-		 st.st_size += charsread)
+	   (charsread = fread (buf, 1, bufsize, stdin)) != 0;
+	   st.st_size += charsread)
 	      if (fwrite (buf, 1, charsread, pfp) != charsread)
 		write_fatal ();
 	    if (ferror (stdin) || fclose (stdin) != 0)
