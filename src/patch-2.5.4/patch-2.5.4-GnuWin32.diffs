@@ -1,0 +1,68 @@
+diff -cr -x config.log -x config.status -x config.cache -x '*.Po' -x '*.pot' -I 'patch-2.5.4-orig*' patch-2.5.4-orig/common.h patch-2.5.4/common.h
+*** patch-2.5.4-orig/common.h	Mon Aug 30 08:20:08 1999
+--- patch-2.5.4/common.h	Fri May 31 22:30:18 2002
+***************
+*** 324,328 ****
+--- 324,332 ----
+  #endif
+  
+  #ifndef TTY_DEVICE
++ #ifndef __WIN32__
+  #define TTY_DEVICE "/dev/tty"
++ #else
++ #define TTY_DEVICE (_fileno(stdout))
++ #endif /* __WIN32_ */
+  #endif
+diff -cr -x config.log -x config.status -x config.cache -x '*.Po' -x '*.pot' -I 'patch-2.5.4-orig*' patch-2.5.4-orig/util.c patch-2.5.4/util.c
+*** patch-2.5.4-orig/util.c	Mon Aug 30 08:20:08 1999
+--- patch-2.5.4/util.c	Fri May 31 22:55:40 2002
+***************
+*** 568,574 ****
+  	 which makes a call-process `patch' hang when it reads from /dev/tty.
+  	 POSIX.2 requires that we read /dev/tty, though.  */
+        ttyfd = (posixly_correct || isatty (STDOUT_FILENO)
+! 	       ? open (TTY_DEVICE, O_RDONLY)
+  	       : -1);
+      }
+  
+--- 568,579 ----
+  	 which makes a call-process `patch' hang when it reads from /dev/tty.
+  	 POSIX.2 requires that we read /dev/tty, though.  */
+        ttyfd = (posixly_correct || isatty (STDOUT_FILENO)
+! #ifndef __WIN32__
+! 			? open (TTY_DEVICE, O_RDONLY)
+! #else /* __WIN32__ */
+! 			? _fileno(stdout)
+! #endif /* __WIN32__ */
+! 
+  	       : -1);
+      }
+  
+***************
+*** 582,587 ****
+--- 587,593 ----
+    else
+      {
+        size_t s = 0;
++ #ifndef __WIN32__
+        while ((r = read (ttyfd, buf + s, bufsize - 1 - s)) == bufsize - 1 - s
+  	     && buf[bufsize - 2] != '\n')
+  	{
+***************
+*** 591,596 ****
+--- 597,611 ----
+  	  if (!buf)
+  	    memory_fatal ();
+  	}
++ #else /* __WIN32__ */
++ 	{
++ 	  char wbuf[80]={80};
++ 	  _cgets(wbuf);
++ 	  r = wbuf[1];
++ 	  buf = realloc(buf, r+2);
++ 	  strcpy(buf, &wbuf[2]);
++ 	}	  
++ #endif /* __WIN32__ */
+        if (r == 0)
+  	printf ("EOF\n");
+        else if (r < 0)

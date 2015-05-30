@@ -58,7 +58,7 @@
 /* #undef HAVE__DOPRINTF */
 
 /* Define if you have the fseeko function.  */
-/* #undef HAVE_FSEEKO */
+#define HAVE_FSEEKO 1
 
 /* Define if you have the isascii function.  */
 #define HAVE_ISASCII 1
@@ -82,7 +82,7 @@
 #define HAVE_RAISE 1
 
 /* Define if you have the rename function.  */
-/* #undef HAVE_RENAME */
+#define HAVE_RENAME 1
 
 /* Define if you have the rmdir function.  */
 #define HAVE_RMDIR 1
@@ -146,7 +146,7 @@
 
 /* Define if <inttypes.h> exists, doesn't clash with <sys/types.h>,
    and declares uintmax_t.  */
-/* #undef HAVE_INTTYPES_H */
+#define HAVE_INTTYPES_H 1
 
 /* Define if struct utimbuf is declared -- usually in <utime.h>.
    Some systems have utime.h but don't declare the struct anywhere.  */

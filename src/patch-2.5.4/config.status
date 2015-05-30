@@ -2,7 +2,7 @@
 # Generated automatically by configure.
 # Run this file to recreate the current configuration.
 # This directory was configured as follows,
-# on host ALPHA:
+# on host gamma:
 #
 # ./configure  '--prefix=c:/progra~1/Patch'
 #
@@ -36,13 +36,13 @@ sed 's/%@/@@/; s/@%/@@/; s/%g$/@g/; /@g$/s/[\\&%]/\\&/g;
 /^[ 	]*VPATH[ 	]*=[^:]*$/d
 
 s%@SHELL@%/bin/sh%g
-s%@CFLAGS@%  -O2 -fnative-struct -fno-rtti -fno-exceptions -mcpu=pentium -march=i386 %g
-s%@CPPFLAGS@%%g
-s%@CXXFLAGS@%  -O2 -fnative-struct -fno-rtti -fno-exceptions -mcpu=pentium -march=i386  %g
+s%@CFLAGS@% -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386 %g
+s%@CPPFLAGS@%  -D__GTHREAD_HIDE_WIN32API -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_FILE_OFFSET_BITS=64     %g
+s%@CXXFLAGS@% -Wall -O3 -mms-bitfields -fms-extensions -fno-rtti -fno-exceptions -march=i386  %g
 s%@FFLAGS@%%g
 s%@DEFS@%-DHAVE_CONFIG_H%g
-s%@LDFLAGS@%  -Wl,-s %g
-s%@LIBS@%  -Wl,-s -lintl -liconv -lc -liberty -lole32 -luuid  -ldir%g
+s%@LDFLAGS@% -Wl,-s -Wl,--enable-auto-import %g
+s%@LIBS@% -Wl,-s -lintl -liconv -lgw32c -liberty -lwsock32 -lole32 -luuid  -ldir%g
 s%@exec_prefix@%${prefix}%g
 s%@prefix@%c:/progra~1/Patch%g
 s%@program_transform_name@%s,x,x,%g
@@ -58,11 +58,11 @@ s%@includedir@%${prefix}/include%g
 s%@oldincludedir@%/usr/include%g
 s%@infodir@%${prefix}/info%g
 s%@mandir@%${prefix}/man%g
-s%@host@%i386-pc-mingw32%g
-s%@host_alias@%i386-pc-mingw32%g
-s%@host_cpu@%i386%g
+s%@host@%i686-pc-cygwin%g
+s%@host_alias@%i686-pc-cygwin%g
+s%@host_cpu@%i686%g
 s%@host_vendor@%pc%g
-s%@host_os@%mingw32%g
+s%@host_os@%cygwin%g
 s%@PACKAGE@%patch%g
 s%@VERSION@%2.5.4%g
 s%@CC@%gcc%g
@@ -71,17 +71,17 @@ s%@INSTALL_PROGRAM@%/bin/install.exe -cpD%g
 s%@INSTALL_SCRIPT@%${INSTALL_PROGRAM}%g
 s%@INSTALL_DATA@%/bin/install.exe -cp%g
 s%@SET_MAKE@%%g
-s%@ed_PROGRAM@%ed%g
-s%@build@%i386-pc-mingw32%g
-s%@build_alias@%i386-pc-mingw32%g
-s%@build_cpu@%i386%g
+s%@ed_PROGRAM@%/cygdrive/h/gnuwin32/bin/ed%g
+s%@build@%i686-pc-cygwin%g
+s%@build_alias@%i686-pc-cygwin%g
+s%@build_cpu@%i686%g
 s%@build_vendor@%pc%g
-s%@build_os@%mingw32%g
+s%@build_os@%cygwin%g
 s%@GETCONF@%getconf%g
 s%@EXEEXT@%.exe%g
 s%@U@%%g
 s%@ANSI2KNR@%%g
-s%@LIBOBJS@% rename.o%g
+s%@LIBOBJS@%%g
 
 CEOF
 
@@ -250,78 +250,93 @@ CEOF
 ${ac_dA}HAVE_VARARGS_H${ac_dB}HAVE_VARARGS_H${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_VARARGS_H${ac_uB}HAVE_VARARGS_H${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_VARARGS_H${ac_eB}HAVE_VARARGS_H${ac_eC}1${ac_eD}
+${ac_dA}HAVE_INTTYPES_H${ac_dB}HAVE_INTTYPES_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_INTTYPES_H${ac_uB}HAVE_INTTYPES_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_INTTYPES_H${ac_eB}HAVE_INTTYPES_H${ac_eC}1${ac_eD}
 ${ac_dA}RETSIGTYPE${ac_dB}RETSIGTYPE${ac_dC}void${ac_dD}
 ${ac_uA}RETSIGTYPE${ac_uB}RETSIGTYPE${ac_uC}void${ac_uD}
 ${ac_eA}RETSIGTYPE${ac_eB}RETSIGTYPE${ac_eC}void${ac_eD}
 ${ac_dA}TIME_WITH_SYS_TIME${ac_dB}TIME_WITH_SYS_TIME${ac_dC}1${ac_dD}
 ${ac_uA}TIME_WITH_SYS_TIME${ac_uB}TIME_WITH_SYS_TIME${ac_uC}1${ac_uD}
 ${ac_eA}TIME_WITH_SYS_TIME${ac_eB}TIME_WITH_SYS_TIME${ac_eC}1${ac_eD}
-${ac_dA}HAVE_UTIME_H${ac_dB}HAVE_UTIME_H${ac_dC}1${ac_dD}
-${ac_uA}HAVE_UTIME_H${ac_uB}HAVE_UTIME_H${ac_uC}1${ac_uD}
-${ac_eA}HAVE_UTIME_H${ac_eB}HAVE_UTIME_H${ac_eC}1${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}HAVE_UTIME_H${ac_dB}HAVE_UTIME_H${ac_dC}1${ac_dD}
+${ac_uA}HAVE_UTIME_H${ac_uB}HAVE_UTIME_H${ac_uC}1${ac_uD}
+${ac_eA}HAVE_UTIME_H${ac_eB}HAVE_UTIME_H${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_STRUCT_UTIMBUF${ac_dB}HAVE_STRUCT_UTIMBUF${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_STRUCT_UTIMBUF${ac_uB}HAVE_STRUCT_UTIMBUF${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_STRUCT_UTIMBUF${ac_eB}HAVE_STRUCT_UTIMBUF${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_ISASCII${ac_dB}HAVE_ISASCII${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_ISASCII${ac_uB}HAVE_ISASCII${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_ISASCII${ac_eB}HAVE_ISASCII${ac_eC}1${ac_eD}
+${ac_dA}HAVE_FSEEKO${ac_dB}HAVE_FSEEKO${ac_dC}1${ac_dD}
+${ac_uA}HAVE_FSEEKO${ac_uB}HAVE_FSEEKO${ac_uC}1${ac_uD}
+${ac_eA}HAVE_FSEEKO${ac_eB}HAVE_FSEEKO${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
 ${ac_dA}HAVE_MEMCMP${ac_dB}HAVE_MEMCMP${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_MEMCMP${ac_uB}HAVE_MEMCMP${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_MEMCMP${ac_eB}HAVE_MEMCMP${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_MKTEMP${ac_dB}HAVE_MKTEMP${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_MKTEMP${ac_uB}HAVE_MKTEMP${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_MKTEMP${ac_eB}HAVE_MKTEMP${ac_eC}1${ac_eD}
-CEOF
-  sed -f conftest.frag conftest.in > conftest.out
-  rm -f conftest.in
-  mv conftest.out conftest.in
-
-  cat > conftest.frag <<CEOF
 ${ac_dA}HAVE_RAISE${ac_dB}HAVE_RAISE${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_RAISE${ac_uB}HAVE_RAISE${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_RAISE${ac_eB}HAVE_RAISE${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_SETMODE${ac_dB}HAVE_SETMODE${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_SETMODE${ac_uB}HAVE_SETMODE${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_SETMODE${ac_eB}HAVE_SETMODE${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
 ${ac_dA}HAVE_SIGPROCMASK${ac_dB}HAVE_SIGPROCMASK${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_SIGPROCMASK${ac_uB}HAVE_SIGPROCMASK${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_SIGPROCMASK${ac_eB}HAVE_SIGPROCMASK${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_STRERROR${ac_dB}HAVE_STRERROR${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_STRERROR${ac_uB}HAVE_STRERROR${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_STRERROR${ac_eB}HAVE_STRERROR${ac_eC}1${ac_eD}
-CEOF
-  sed -f conftest.frag conftest.in > conftest.out
-  rm -f conftest.in
-  mv conftest.out conftest.in
-
-  cat > conftest.frag <<CEOF
 ${ac_dA}HAVE_MEMCHR${ac_dB}HAVE_MEMCHR${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_MEMCHR${ac_uB}HAVE_MEMCHR${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_MEMCHR${ac_eB}HAVE_MEMCHR${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_MKDIR${ac_dB}HAVE_MKDIR${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_MKDIR${ac_uB}HAVE_MKDIR${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_MKDIR${ac_eB}HAVE_MKDIR${ac_eC}1${ac_eD}
-${ac_dA}HAVE_RMDIR${ac_dB}HAVE_RMDIR${ac_dC}1${ac_dD}
-${ac_uA}HAVE_RMDIR${ac_uB}HAVE_RMDIR${ac_uC}1${ac_uD}
-${ac_eA}HAVE_RMDIR${ac_eB}HAVE_RMDIR${ac_eC}1${ac_eD}
-${ac_dA}HAVE_DONE_WORKING_MALLOC_CHECK${ac_dB}HAVE_DONE_WORKING_MALLOC_CHECK${ac_dC}1${ac_dD}
-${ac_uA}HAVE_DONE_WORKING_MALLOC_CHECK${ac_uB}HAVE_DONE_WORKING_MALLOC_CHECK${ac_uC}1${ac_uD}
-${ac_eA}HAVE_DONE_WORKING_MALLOC_CHECK${ac_eB}HAVE_DONE_WORKING_MALLOC_CHECK${ac_eC}1${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}HAVE_RENAME${ac_dB}HAVE_RENAME${ac_dC}1${ac_dD}
+${ac_uA}HAVE_RENAME${ac_uB}HAVE_RENAME${ac_uC}1${ac_uD}
+${ac_eA}HAVE_RENAME${ac_eB}HAVE_RENAME${ac_eC}1${ac_eD}
+${ac_dA}HAVE_RMDIR${ac_dB}HAVE_RMDIR${ac_dC}1${ac_dD}
+${ac_uA}HAVE_RMDIR${ac_uB}HAVE_RMDIR${ac_uC}1${ac_uD}
+${ac_eA}HAVE_RMDIR${ac_eB}HAVE_RMDIR${ac_eC}1${ac_eD}
+${ac_dA}HAVE_DONE_WORKING_MALLOC_CHECK${ac_dB}HAVE_DONE_WORKING_MALLOC_CHECK${ac_dC}1${ac_dD}
+${ac_uA}HAVE_DONE_WORKING_MALLOC_CHECK${ac_uB}HAVE_DONE_WORKING_MALLOC_CHECK${ac_uC}1${ac_uD}
+${ac_eA}HAVE_DONE_WORKING_MALLOC_CHECK${ac_eB}HAVE_DONE_WORKING_MALLOC_CHECK${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_DONE_WORKING_REALLOC_CHECK${ac_dB}HAVE_DONE_WORKING_REALLOC_CHECK${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_DONE_WORKING_REALLOC_CHECK${ac_uB}HAVE_DONE_WORKING_REALLOC_CHECK${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_DONE_WORKING_REALLOC_CHECK${ac_eB}HAVE_DONE_WORKING_REALLOC_CHECK${ac_eC}1${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
 ${ac_dA}HAVE_VPRINTF${ac_dB}HAVE_VPRINTF${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_VPRINTF${ac_uB}HAVE_VPRINTF${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_VPRINTF${ac_eB}HAVE_VPRINTF${ac_eC}1${ac_eD}
@@ -331,12 +346,6 @@ ${ac_eA}HAVE_LONG_FILE_NAMES${ac_eB}HAVE_LONG_FILE_NAMES${ac_eC}1${ac_eD}
 ${ac_dA}D_INO_IN_DIRENT${ac_dB}D_INO_IN_DIRENT${ac_dC}1${ac_dD}
 ${ac_uA}D_INO_IN_DIRENT${ac_uB}D_INO_IN_DIRENT${ac_uC}1${ac_uD}
 ${ac_eA}D_INO_IN_DIRENT${ac_eB}D_INO_IN_DIRENT${ac_eC}1${ac_eD}
-CEOF
-  sed -f conftest.frag conftest.in > conftest.out
-  rm -f conftest.in
-  mv conftest.out conftest.in
-
-  cat > conftest.frag <<CEOF
 s%^[ 	]*#[ 	]*undef[ 	][ 	]*[a-zA-Z_][a-zA-Z_0-9]*%/* & */%
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
