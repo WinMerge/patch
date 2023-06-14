@@ -1,14 +1,14 @@
-/* utility functions for `patch' */
+/* utility functions for 'patch' */
 
 /* Copyright (C) 1986 Larry Wall
 
-   Copyright (C) 1992, 1993, 1997, 1998, 1999, 2001, 2002, 2003, 2006,
-   2009 Free Software Foundation, Inc.
+   Copyright (C) 1992-1993, 1997-1999, 2001-2003, 2006, 2009-2012 Free Software
+   Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
+   This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
-   any later version.
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,24 +16,21 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; see the file COPYING.
-   If not, write to the Free Software Foundation,
-   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #define XTERN extern
 #include <common.h>
-#include <backupfile.h>
 #include <dirname.h>
 #include <hash.h>
 #include <quotearg.h>
-#include <quotesys.h>
 #undef XTERN
 #define XTERN
 #include <util.h>
 #include <xalloc.h>
 
-#include <maketime.h>
-#include <partime.h>
+#include <getdate.h>
+#include "ignore-value.h"
+#include "error.h"
 
 #include <signal.h>
 #if !defined SIGCHLD && defined SIGCLD
@@ -45,13 +42,23 @@
 
 #include <stdarg.h>
 #include <full-write.h>
+#include <tempname.h>
 
-static void makedirs (char *);
+#if USE_XATTR
+# include <attr/error_context.h>
+# include <attr/libattr.h>
+# include <stdarg.h>
+# include "verror.h"
+#endif
+
+static void makedirs (char const *);
 
 typedef struct
 {
   dev_t dev;
   ino_t ino;
+  enum file_id_type type;
+  bool queued_output;
 } file_id;
 
 /* Return an index for ENTRY into a hash table of size TABLE_SIZE.  */
@@ -87,10 +94,8 @@ init_backup_hash_table (void)
     xalloc_die ();
 }
 
-/* Insert a file with status ST into the hash table.  */
-
-static void
-insert_file (struct stat const *st)
+static file_id *
+__insert_file_id (struct stat const *st, enum file_id_type type)
 {
    file_id *p;
    static file_id *next_slot;
@@ -99,26 +104,65 @@ insert_file (struct stat const *st)
      next_slot = xmalloc (sizeof *next_slot);
    next_slot->dev = st->st_dev;
    next_slot->ino = st->st_ino;
+   next_slot->queued_output = false;
    p = hash_insert (file_id_table, next_slot);
    if (!p)
      xalloc_die ();
    if (p == next_slot)
      next_slot = NULL;
+   p->type = type;
+   return p;
+}
+
+static file_id *
+__lookup_file_id (struct stat const *st)
+{
+  file_id f;
+
+  f.dev = st->st_dev;
+  f.ino = st->st_ino;
+  return hash_lookup (file_id_table, &f);
+}
+
+/* Insert a file with status ST and type TYPE into the hash table.
+   The type of an existing entry can be changed by re-inserting it.  */
+
+void
+insert_file_id (struct stat const *st, enum file_id_type type)
+{
+  __insert_file_id (st, type);
 }
 
 /* Has the file identified by ST already been inserted into the hash
-   table?  */
+   table, and what type does it have?  */
 
-bool
-file_already_seen (struct stat const *st)
+enum file_id_type
+lookup_file_id (struct stat const *st)
 {
-  file_id f;
-  f.dev = st->st_dev;
-  f.ino = st->st_ino;
-  return hash_lookup (file_id_table, &f) != 0;
+  file_id *p = __lookup_file_id (st);
+
+  return p ? p->type : UNKNOWN;
 }
 
-static bool
+void
+set_queued_output (struct stat const *st, bool queued_output)
+{
+  file_id *p = __lookup_file_id (st);
+
+  if (! p)
+    p = __insert_file_id (st, UNKNOWN);
+  p->queued_output = queued_output;
+}
+
+bool
+has_queued_output (struct stat const *st)
+{
+  file_id *p = __lookup_file_id (st);
+
+  return p && p->queued_output;
+}
+
+static bool _GL_ATTRIBUTE_PURE
 contains_slash (const char *s)
 {
   for (; *s; s++)
@@ -127,38 +171,157 @@ contains_slash (const char *s)
   return false;
 }
 
+#if USE_XATTR
+
 static void
-create_backup_copy (char const *from, char const *to, struct stat *st,
+copy_attr_error (struct error_context *ctx, char const *fmt, ...)
+{
+  int err = errno;
+  va_list ap;
+
+  /* use verror module to print error message */
+  va_start (ap, fmt);
+  verror (0, err, fmt, ap);
+  va_end (ap);
+}
+
+static char const *
+copy_attr_quote (struct error_context *ctx, char const *str)
+{
+  return quotearg (str);
+}
+
+static void
+copy_attr_free (struct error_context *ctx, char const *str)
+{
+}
+
+static int
+copy_attr_check (const char *name, struct error_context *ctx)
+{
+	int action = attr_copy_action (name, ctx);
+	return action == 0 || action == ATTR_ACTION_PERMISSIONS;
+}
+
+static int
+copy_attr (char const *src_path, char const *dst_path)
+{
+  struct error_context ctx =
+  {
+    .error = copy_attr_error,
+    .quote = copy_attr_quote,
+    .quote_free = copy_attr_free
+  };
+  return attr_copy_file (src_path, dst_path, copy_attr_check, &ctx);
+}
+
+#else  /* USE_XATTR */
+
+static int
+copy_attr (char const *src_path, char const *dst_path)
+{
+  return 0;
+}
+
+#endif
+
+void
+set_file_attributes (char const *to, enum file_attributes attr,
+		     char const *from, const struct stat *st, mode_t mode,
+		     struct timespec *new_time)
+{
+  if (attr & FA_TIMES)
+    {
+      struct timespec times[2];
+      if (new_time)
+	times[0] = times[1] = *new_time;
+      else
+        {
+	  times[0] = get_stat_atime (st);
+	  times[1] = get_stat_mtime (st);
+	}
+      if (lutimens (to, times) != 0)
+	pfatal ("Failed to set the timestamps of %s %s",
+		S_ISLNK (mode) ? "symbolic link" : "file",
+		quotearg (to));
+    }
+  if (attr & FA_IDS)
+    {
+      static uid_t euid = -1;
+      static gid_t egid = -1;
+      uid_t uid;
+      uid_t gid;
+
+      if (euid == -1)
+        {
+	  euid = geteuid ();
+	  egid = getegid ();
+	}
+      uid = (euid == st->st_uid) ? -1 : st->st_uid;
+      gid = (egid == st->st_gid) ? -1 : st->st_gid;
+
+      /* May fail if we are not privileged to set the file owner, or we are
+         not in group instat.st_gid.  Ignore those errors.  */
+      if ((uid != -1 || gid != -1)
+	  && lchown (to, uid, gid) != 0
+	  && (errno != EPERM
+	      || (uid != -1
+		  && lchown (to, (uid = -1), gid) != 0
+		  && errno != EPERM)))
+	pfatal ("Failed to set the %s of %s %s",
+		(uid == -1) ? "owner" : "owning group",
+		S_ISLNK (mode) ? "symbolic link" : "file",
+		quotearg (to));
+    }
+  if (attr & FA_XATTRS)
+    if (copy_attr (from, to))
+      fatal_exit (0);
+  /* FIXME: There may be other attributes to preserve.  */
+  if (attr & FA_MODE)
+    {
+#if 0 && defined HAVE_LCHMOD
+      /* The "diff --git" format does not store the file permissions of
+	 symlinks, so don't try to set symlink file permissions even on
+	 systems where we could.  */
+      if (lchmod (to, mode))
+#else
+      if (! S_ISLNK (mode) && chmod (to, mode) != 0)
+#endif
+	pfatal ("Failed to set the permissions of %s %s",
+		S_ISLNK (mode) ? "symbolic link" : "file",
+		quotearg (to));
+    }
+}
+
+static void
+create_backup_copy (char const *from, char const *to, const struct stat *st,
 		    bool to_dir_known_to_exist)
 {
-  struct utimbuf utimbuf;
-
-  copy_file (from, to, 0, 0, st->st_mode, to_dir_known_to_exist);
-  utimbuf.actime = st->st_atime;
-  utimbuf.modtime = st->st_mtime;
-  if (utime (to, &utimbuf) != 0)
-    pfatal ("Can't set timestamp on file %s",
-	    quotearg (to));
-  if (chmod (to, st->st_mode) != 0)
-    pfatal ("Can't set timestamp on file %s",
-	    quotearg (to));
+  copy_file (from, to, NULL, 0, st->st_mode, to_dir_known_to_exist);
+  set_file_attributes (to, FA_TIMES | FA_IDS | FA_MODE, from, st, st->st_mode, NULL);
 }
 
 void
-create_backup (char *to, struct stat *to_st, int *to_errno,
-	       bool leave_original)
+create_backup (char const *to, const struct stat *to_st, bool leave_original)
 {
-  struct stat tmp_st;
-  int tmp_errno;
+  /* When the input to patch modifies the same file more than once, patch only
+     backs up the initial version of each file.
 
-  if (! to_st || ! to_errno)
-    {
-      to_st = &tmp_st;
-      to_errno = &tmp_errno;
-    }
-  *to_errno = stat (to, to_st) == 0 ? 0 : errno;
+     To figure out which files have already been backed up, patch remembers the
+     files that replace the original files.  Files not known already are backed
+     up; files already known have already been backed up before, and are
+     skipped.
 
-  if (! *to_errno && file_already_seen (to_st))
+     When a patch tries to delete a file, in order to not break the above
+     logic, we merely remember which file to delete.  After the entire patch
+     file has been read, we delete all files marked for deletion which have not
+     been recreated in the meantime.  */
+
+  if (to_st && ! (S_ISREG (to_st->st_mode) || S_ISLNK (to_st->st_mode)))
+    fatal ("File %s is not a %s -- refusing to create backup",
+	   to, S_ISLNK (to_st->st_mode) ? "symbolic link" : "regular file");
+
+  if (to_st && lookup_file_id (to_st) == CREATED)
     {
       if (debug & 4)
 	say ("File %s already seen\n", quotearg (to));
@@ -184,7 +347,7 @@ create_backup (char *to, struct stat *to_st, int *to_errno,
 	  for (o = t + tlen, olen = 0;
 	       o > t && ! ISSLASH (*(o - 1));
 	       o--)
-	    continue;
+	    /* do nothing */ ;
 	  olen = t + tlen - o;
 	  tlen -= olen;
 	  bakname = xmalloc (plen + tlen + blen + olen + slen + 1);
@@ -207,7 +370,7 @@ create_backup (char *to, struct stat *to_st, int *to_errno,
 	    xalloc_die ();
 	}
 
-      if (*to_errno)
+      if (! to_st)
 	{
 	  int fd;
 
@@ -267,63 +430,103 @@ create_backup (char *to, struct stat *to_st, int *to_errno,
    Back up TO if BACKUP is true.  */
 
 void
-move_file (char const *from, int volatile *from_needs_removal,
+move_file (char const *from, int *from_needs_removal,
 	   struct stat const *fromst,
-	   char *to, mode_t mode, bool backup)
+	   char const *to, mode_t mode, bool backup)
 {
   struct stat to_st;
-  int to_errno = -1;
+  int to_errno;
 
+  to_errno = lstat (to, &to_st) == 0 ? 0 : errno;
   if (backup)
-    create_backup (to, &to_st, &to_errno, false);
+    create_backup (to, to_errno ? NULL : &to_st, false);
+  if (! to_errno)
+    insert_file_id (&to_st, OVERWRITTEN);
 
   if (from)
     {
-      if (debug & 4)
-	say ("Renaming file %s to %s\n",
-	     quotearg_n (0, from), quotearg_n (1, to));
-
-      if (rename (from, to) != 0)
+      if (S_ISLNK (mode))
 	{
 	  bool to_dir_known_to_exist = false;
 
-	  if (errno == ENOENT
-	      && (to_errno == -1 || to_errno == ENOENT))
-	    {
-	      makedirs (to);
-	      to_dir_known_to_exist = true;
-	      if (rename (from, to) == 0)
-		goto rename_succeeded;
-	    }
+	  /* FROM contains the contents of the symlink we have patched; need
+	     to convert that back into a symlink. */
+	  char *buffer = xmalloc (PATH_MAX);
+	  int fd, size = 0, i;
 
-	  if (errno == EXDEV)
-	    {
-	      struct stat tost;
-	      if (! backup)
-		{
-		  if (unlink (to) == 0)
-		    to_dir_known_to_exist = true;
-		  else if (errno != ENOENT)
-		    pfatal ("Can't remove file %s", quotearg (to));
-		}
-	      copy_file (from, to, &tost, 0, mode, to_dir_known_to_exist);
-	      insert_file (&tost);
-	      return;
-	    }
+	  if ((fd = open (from, O_RDONLY | O_BINARY)) < 0)
+	    pfatal ("Can't reopen file %s", quotearg (from));
+	  while ((i = read (fd, buffer + size, PATH_MAX - size)) > 0)
+	    size += i;
+	  if (i != 0 || close (fd) != 0)
+	    read_fatal ();
+	  buffer[size] = 0;
 
-	  pfatal ("Can't rename file %s to %s",
-		  quotearg_n (0, from), quotearg_n (1, to));
+	  if (! backup)
+	    {
+	      if (unlink (to) == 0)
+		to_dir_known_to_exist = true;
+	    }
+	  if (symlink (buffer, to) != 0)
+	    {
+	      if (errno == ENOENT && ! to_dir_known_to_exist)
+		makedirs (to);
+	      if (symlink (buffer, to) != 0)
+		pfatal ("Can't create %s %s", "symbolic link", to);
+	    }
+	  free (buffer);
+	  if (lstat (to, &to_st) != 0)
+	    pfatal ("Can't get file attributes of %s %s", "symbolic link", to);
+	  insert_file_id (&to_st, CREATED);
 	}
+      else
+	{
+	  if (debug & 4)
+	    say ("Renaming file %s to %s\n",
+		 quotearg_n (0, from), quotearg_n (1, to));
 
-    rename_succeeded:
-      if (fromst)
-	insert_file (fromst);
-      /* Do not clear *FROM_NEEDS_REMOVAL if it's possible that the
-	 rename returned zero because FROM and TO are hard links to
-	 the same file.  */
-      if (0 < to_errno
-	  || (to_errno == 0 && to_st.st_nlink <= 1))
-	*from_needs_removal = 0;
+	  if (rename (from, to) != 0)
+	    {
+	      bool to_dir_known_to_exist = false;
+
+	      if (errno == ENOENT
+		  && (to_errno == -1 || to_errno == ENOENT))
+		{
+		  makedirs (to);
+		  to_dir_known_to_exist = true;
+		  if (rename (from, to) == 0)
+		    goto rename_succeeded;
+		}
+
+	      if (errno == EXDEV)
+		{
+		  struct stat tost;
+		  if (! backup)
+		    {
+		      if (unlink (to) == 0)
+			to_dir_known_to_exist = true;
+		      else if (errno != ENOENT)
+			pfatal ("Can't remove file %s", quotearg (to));
+		    }
+		  copy_file (from, to, &tost, 0, mode, to_dir_known_to_exist);
+		  insert_file_id (&tost, CREATED);
+		  return;
+		}
+
+	      pfatal ("Can't rename file %s to %s",
+		      quotearg_n (0, from), quotearg_n (1, to));
+	    }
+
+	rename_succeeded:
+	  insert_file_id (fromst, CREATED);
+	  /* Do not clear *FROM_NEEDS_REMOVAL if it's possible that the
+	     rename returned zero because FROM and TO are hard links to
+	     the same file.  */
+	  if ((0 < to_errno
+	       || (to_errno == 0 && to_st.st_nlink <= 1))
+	      && from_needs_removal)
+	    *from_needs_removal = 0;
+	}
     }
   else if (! backup)
     {
@@ -392,14 +595,33 @@ copy_file (char const *from, char const *to, struct stat *tost,
   int tofd;
 
   if (debug & 4)
-    say ("Copying file %s to %s\n",
+    say ("Copying %s %s to %s\n",
+	 S_ISLNK (mode) ? "symbolic link" : "file",
 	 quotearg_n (0, from), quotearg_n (1, to));
-  tofd = create_file (to, O_WRONLY | O_BINARY | to_flags, mode,
-		      to_dir_known_to_exist);
-  copy_to_fd (from, tofd);
-  if ((tost && fstat (tofd, tost) != 0)
-      || close (tofd) != 0)
-    write_fatal ();
+
+  if (S_ISLNK (mode))
+    {
+      char *buffer = xmalloc (PATH_MAX);
+
+      if (readlink (from, buffer, PATH_MAX) < 0)
+	pfatal ("Can't read %s %s", "symbolic link", from);
+      if (symlink (buffer, to) != 0)
+	pfatal ("Can't create %s %s", "symbolic link", to);
+      if (tost && lstat (to, tost) != 0)
+	pfatal ("Can't get file attributes of %s %s", "symbolic link", to);
+      free (buffer);
+    }
+  else
+    {
+      assert (S_ISREG (mode));
+      tofd = create_file (to, O_WRONLY | O_BINARY | to_flags, mode,
+			  to_dir_known_to_exist);
+      copy_to_fd (from, tofd);
+      if (tost && fstat (tofd, tost) != 0)
+	pfatal ("Can't get file attributes of %s %s", "file", to);
+      if (close (tofd) != 0)
+	write_fatal ();
+    }
 }
 
 /* Append to file. */
@@ -432,6 +654,17 @@ static char const SCCSDIFF2[] = "|diff - %s";
 static char const CLEARTOOL_CO[] = "cleartool co -unr -nc ";
 
 static char const PERFORCE_CO[] = "p4 edit ";
+
+static size_t
+quote_system_arg (char *quoted, char const *arg)
+{
+  char *q = quotearg_style (shell_quoting_style, arg);
+  size_t len = strlen (q);
+
+  if (quoted)
+    memcpy (quoted, q, len + 1);
+  return len;
+}
 
 /* Return "RCS" if FILENAME is controlled by RCS,
    "SCCS" if it is controlled by SCCS,
@@ -587,7 +820,7 @@ version_get (char const *filename, char const *cs, bool exists, bool readonly,
   if (dry_run)
     {
       if (! exists)
-	fatal ("can't do dry run on nonexistent version-controlled file %s; invoke `%s' and try again",
+	fatal ("can't do dry run on nonexistent version-controlled file %s; invoke '%s' and try again",
 	       quotearg (filename), getbuf);
     }
   else
@@ -607,9 +840,9 @@ version_get (char const *filename, char const *cs, bool exists, bool readonly,
 /* Allocate a unique area for a string. */
 
 char *
-savebuf (register char const *s, register size_t size)
+savebuf (char const *s, size_t size)
 {
-  register char *rv;
+  char *rv;
 
   if (! size)
     return NULL;
@@ -638,11 +871,11 @@ remove_prefix (char *p, size_t prefixlen)
 {
   char const *s = p + prefixlen;
   while ((*p++ = *s++))
-    continue;
+    /* do nothing */ ;
 }
 
 char *
-format_linenum (char numbuf[LINENUM_LENGTH_BOUND + 1], LINENUM n)
+format_linenum (char numbuf[LINENUM_LENGTH_BOUND + 1], lin n)
 {
   char *p = numbuf + LINENUM_LENGTH_BOUND;
   *p = '\0';
@@ -753,7 +986,7 @@ ask (char const *format, ...)
       /* If standard output is not a tty, don't bother opening /dev/tty,
 	 since it's unlikely that stdout will be seen by the tty user.
 	 The isatty test also works around a bug in GNU Emacs 19.34 under Linux
-	 which makes a call-process `patch' hang when it reads from /dev/tty.
+	 which makes a call-process 'patch' hang when it reads from /dev/tty.
 	 POSIX.1-2001 XCU line 26599 requires that we read /dev/tty,
 	 though.  */
       ttyfd = (posixly_correct || isatty (STDOUT_FILENO)
@@ -784,9 +1017,8 @@ ask (char const *format, ...)
 	printf ("EOF\n");
       else if (r < 0)
 	{
-	  perror ("tty read");
-	  fflush (stderr);
-	  close (ttyfd);
+	  error (0, errno, "tty read failed");
+	  ignore_value (close (ttyfd));
 	  ttyfd = -1;
 	  r = 0;
 	}
@@ -873,15 +1105,6 @@ static int const sigs[] = {
 #endif
 #define sigaddset(s, sig) (*(s) |= sigmask (sig))
 #define sigismember(s, sig) ((*(s) & sigmask (sig)) != 0)
-#ifndef SIG_BLOCK
-#define SIG_BLOCK 0
-#endif
-#ifndef SIG_UNBLOCK
-#define SIG_UNBLOCK (SIG_BLOCK + 1)
-#endif
-#ifndef SIG_SETMASK
-#define SIG_SETMASK (SIG_BLOCK + 2)
-#endif
 #define sigprocmask(how, n, o) \
   ((how) == SIG_BLOCK \
    ? ((o) ? *(o) = sigblock (*(n)) : sigblock (*(n))) \
@@ -1005,7 +1228,7 @@ replace_slashes (char *filename)
   char const *component_start;
 
   for (f = filename + FILE_SYSTEM_PREFIX_LEN (filename);  ISSLASH (*f);  f++)
-    continue;
+    /* do nothing */ ;
 
   component_start = f;
 
@@ -1037,13 +1260,14 @@ replace_slashes (char *filename)
 }
 
 /* Make sure we'll have the directories to create a file.
-   Ignore the last element of `filename'.  */
+   Ignore the last element of 'filename'.  */
 
 static void
-makedirs (register char *filename)
+makedirs (char const *name)
 {
-  register char *f;
-  register char *flim = replace_slashes (filename);
+  char *filename = xstrdup (name);
+  char *f;
+  char *flim = replace_slashes (filename);
 
   if (flim)
     {
@@ -1062,14 +1286,16 @@ makedirs (register char *filename)
 	    *f = '/';
 	  }
     }
+  free (filename);
 }
 
 /* Remove empty ancestor directories of FILENAME.
    Ignore errors, since the path may contain ".."s, and when there
    is an EEXIST failure the system may return some other error number.  */
 void
-removedirs (char *filename)
+removedirs (char const *name)
 {
+  char *filename = xstrdup (name);
   size_t i;
 
   for (i = strlen (filename);  i != 0;  i--)
@@ -1087,128 +1313,269 @@ removedirs (char *filename)
 	  say ("Removed empty directory %s\n", quotearg (filename));
 	filename[i] = '/';
       }
+  free (filename);
 }
 
-static time_t initial_time;
+static struct timespec initial_time;
 
 void
 init_time (void)
 {
-  time (&initial_time);
+  gettime (&initial_time);
 }
+
+static char *
+parse_c_string (char const *s, char const **endp)
+{
+  char *u, *v;
+
+  assert (*s == '"');
+  s++;
+  u = v = xmalloc (strlen (s));
+  for (;;)
+    {
+      char c = *s++;
+
+      switch (c)
+	{
+	  case 0:
+	    goto fail;
+
+	  case '"':
+	    *v++ = 0;
+	    v = realloc (u, v - u);
+	    if (v)
+	      u = v;
+	    if (endp)
+	      *endp = s;
+	    return u;
+
+	  case '\\':
+	    break;
+
+	  default:
+	    *v++ = c;
+	    continue;
+	}
+
+      c = *s++;
+      switch (c)
+	{
+	  case 'a': c = '\a'; break;
+	  case 'b': c = '\b'; break;
+	  case 'f': c = '\f'; break;
+	  case 'n': c = '\n'; break;
+	  case 'r': c = '\r'; break;
+	  case 't': c = '\t'; break;
+	  case 'v': c = '\v'; break;
+	  case '\\': case '"':
+	    break;  /* verbatim */
+	  case '0': case '1': case '2': case '3':
+	    {
+	      int acc = (c - '0') << 6;
+
+	      c = *s++;
+	      if (c < '0' || c > '7')
+	        goto fail;
+	      acc |= (c - '0') << 3;
+	      c = *s++;
+	      if (c < '0' || c > '7')
+	        goto fail;
+	      acc |= (c - '0');
+	      c = acc;
+	      break;
+	    }
+	  default:
+	    goto fail;
+	}
+      *v++ = c;
+    }
+
+fail:
+  free (u);
+  if (endp)
+    *endp = s;
+  return NULL;
+}
+
+/* Strip up to STRIP_LEADING leading slashes.
+   If STRIP_LEADING is negative, strip all leading slashes.
+   Returns a pointer into NAME on success, and NULL otherwise.
+  */
+static bool
+strip_leading_slashes (char *name, int strip_leading)
+{
+  int s = strip_leading;
+  char *p, *n;
+
+  for (p = n = name;  *p;  p++)
+    {
+      if (ISSLASH (*p))
+	{
+	  while (ISSLASH (p[1]))
+	    p++;
+	  if (strip_leading < 0 || --s >= 0)
+	      n = p+1;
+	}
+    }
+  if ((strip_leading < 0 || s <= 0) && *n)
+    {
+      memmove (name, n, strlen (n) + 1);
+      return true;
+    }
+  else
+    return false;
+}
+
 
 /* Make filenames more reasonable. */
 
-char *
-fetchname (char *at, int strip_leading, char **ptimestr, time_t *pstamp)
+void
+fetchname (char const *at, int strip_leading, char **pname,
+	   char **ptimestr, struct timespec *pstamp)
 {
     char *name;
+    const char *t;
     char *timestr = NULL;
-    register char *t;
-    int sleading = strip_leading;
-    time_t stamp = (time_t) -1;
+    struct timespec stamp;
+
+    stamp.tv_sec = -1;
+    stamp.tv_nsec = 0;
 
     while (ISSPACE ((unsigned char) *at))
 	at++;
     if (debug & 128)
 	say ("fetchname %s %d\n", at, strip_leading);
 
-    name = at;
-    /* Strip up to `strip_leading' leading slashes and null terminate.
-       If `strip_leading' is negative, strip all leading slashes.  */
-    for (t = at;  *t;  t++)
+    if (*at == '"')
       {
-	if (ISSLASH (*t))
+	name = parse_c_string (at, &t);
+	if (! name)
 	  {
-	    while (ISSLASH (t[1]))
-	      t++;
-	    if (strip_leading < 0 || --sleading >= 0)
-		name = t+1;
-	  }
-	else if (ISSPACE ((unsigned char) *t))
-	  {
-	    /* Allow file names with internal spaces,
-	       but only if a tab separates the file name from the date.  */
-	    char const *u = t;
-	    while (*u != '\t' && ISSPACE ((unsigned char) u[1]))
-	      u++;
-	    if (*u != '\t' && strchr (u + 1, '\t'))
-	      continue;
-
-	    if (*u == '\n')
-	      stamp = (time_t) -1;
-	    else
-	      {
-		if (ptimestr)
-		  {
-		    char const *t = u + strlen (u);
-		    if (t != u && *(t-1) == '\n')
-		      t--;
-		    if (t != u && *(t-1) == '\r')
-		      t--;
-		    timestr = savebuf (u, t - u + 1);
-		    timestr[t - u] = 0;
-		  }
-
-		if (set_time | set_utc)
-		  stamp = str2time (&u, initial_time,
-				    set_utc ? 0L : TM_LOCAL_ZONE);
-		else
-		  {
-		    /* The head says the file is nonexistent if the
-		       timestamp is the epoch; but the listed time is
-		       local time, not UTC, and POSIX.1 allows local
-		       time offset anywhere in the range -25:00 <
-		       offset < +26:00.  Match any time in that range
-		       by assuming local time is -25:00 and then
-		       matching any ``local'' time T in the range 0 <
-		       T < 25+26 hours.  */
-		    stamp = str2time (&u, initial_time, -25L * 60 * 60);
-		    if (0 < stamp && stamp < (25 + 26) * 60L * 60)
-		      stamp = 0;
-		  }
-
-		if (*u && ! ISSPACE ((unsigned char) *u))
-		  stamp = (time_t) -1;
-	      }
-
-	    *t = '\0';
-	    break;
+	    if (debug & 128)
+	      say ("ignoring malformed filename %s\n", quotearg (at));
+	    return;
 	  }
       }
-
-    if (!*name)
+    else
       {
-	if (timestr)
-	  free (timestr);
-	return 0;
+	for (t = at;  *t;  t++)
+	  {
+	    if (ISSPACE ((unsigned char) *t))
+	      {
+		/* Allow file names with internal spaces,
+		   but only if a tab separates the file name from the date.  */
+		char const *u = t;
+		while (*u != '\t' && ISSPACE ((unsigned char) u[1]))
+		  u++;
+		if (*u != '\t' && (strchr (u + 1, pstamp ? '\t' : '\n')))
+		  continue;
+		break;
+	      }
+	  }
+	name = savebuf (at, t - at + 1);
+	name[t - at] = 0;
       }
 
     /* If the name is "/dev/null", ignore the name and mark the file
        as being nonexistent.  The name "/dev/null" appears in patches
        regardless of how NULL_DEVICE is spelled.  */
-    if (strcmp (at, "/dev/null") == 0)
+    if (strcmp (name, "/dev/null") == 0)
       {
+	free (name);
 	if (pstamp)
-	  *pstamp = 0;
-	if (timestr)
-	  free (timestr);
-	return 0;
+	  {
+	    pstamp->tv_sec = 0;
+	    pstamp->tv_nsec = 0;
+	  }
+	return;
       }
 
     /* Ignore the name if it doesn't have enough slashes to strip off.  */
-    if (0 < sleading)
+    if (! strip_leading_slashes (name, strip_leading))
       {
-	if (timestr)
-	  free (timestr);
-	return 0;
+	free (name);
+	return;
       }
 
+    if (ptimestr)
+      {
+	char const *u = t + strlen (t);
+
+	if (u != t && *(u-1) == '\n')
+	  u--;
+	if (u != t && *(u-1) == '\r')
+	  u--;
+	timestr = savebuf (t, u - t + 1);
+	timestr[u - t] = 0;
+      }
+
+      if (*t != '\n')
+	{
+	  if (! pstamp)
+	    {
+	      free (name);
+	      free (timestr);
+	      return;
+	    }
+
+	  if (set_time | set_utc)
+	    get_date (&stamp, t, &initial_time);
+	  else
+	    {
+	      /* The head says the file is nonexistent if the
+		 timestamp is the epoch; but the listed time is
+		 local time, not UTC, and POSIX.1 allows local
+		 time offset anywhere in the range -25:00 <
+		 offset < +26:00.  Match any time in that range.  */
+	      const struct timespec lower = { -25L * 60 * 60 },
+				    upper = {  26L * 60 * 60 };
+	      if (get_date (&stamp, t, &initial_time)
+		  && timespec_cmp (stamp, lower) > 0
+		  && timespec_cmp (stamp, upper) < 0) {
+		      stamp.tv_sec = 0;
+		      stamp.tv_nsec = 0;
+	      }
+	    }
+	}
+
+    free (*pname);
+    *pname = name;
+    if (ptimestr)
+      {
+	free (*ptimestr);
+	*ptimestr = timestr;
+      }
     if (pstamp)
       *pstamp = stamp;
-    if (timestr)
-      *ptimestr = timestr;
-    return savestr (name);
+}
+
+char *
+parse_name (char const *s, int strip_leading, char const **endp)
+{
+  char *ret;
+
+  while (ISSPACE ((unsigned char) *s))
+    s++;
+  if (*s == '"')
+    ret = parse_c_string (s, endp);
+  else
+    {
+      char const *t;
+
+      for (t = s; *t && ! ISSPACE ((unsigned char) *t); t++)
+	/* do nothing*/ ;
+      ret = savebuf (s, t - s + 1);
+      ret[t - s] = 0;
+      if (endp)
+	*endp = t;
+    }
+  if (! strip_leading_slashes (ret, strip_leading))
+    {
+      free (ret);
+      ret = NULL;
+    }
+  return ret;
 }
 
 void
@@ -1216,4 +1583,69 @@ Fseek (FILE *stream, file_offset offset, int ptrname)
 {
   if (file_seek (stream, offset, ptrname) != 0)
     pfatal ("fseek");
+}
+
+#ifndef TMPDIR
+#define TMPDIR "/tmp"
+#endif
+
+int
+make_tempfile (char const **name, char letter, char const *real_name,
+	       int flags, mode_t mode)
+{
+  int try_makedirs_errno = ENOENT;
+  char *template;
+
+  if (real_name)
+    {
+      char *dirname, *basename;
+
+      dirname = dir_name (real_name);
+      basename = base_name (real_name);
+
+      template = xmalloc (strlen (dirname) + 1 + strlen (basename) + 9);
+      sprintf (template, "%s/%s.%cXXXXXX", dirname, basename, letter);
+      free (dirname);
+      free (basename);
+    }
+  else
+    {
+      char const *tmpdir;
+
+      tmpdir = getenv ("TMPDIR");  /* Unix tradition */
+      if (! tmpdir)
+	tmpdir = getenv ("TMP");  /* DOS tradition */
+      if (! tmpdir)
+	tmpdir = getenv ("TEMP");  /* another DOS tradition */
+      if (! tmpdir)
+	tmpdir = TMPDIR;
+
+      template = xmalloc (strlen (tmpdir) + 10);
+      sprintf (template, "%s/p%cXXXXXX", tmpdir, letter);
+    }
+  for(;;)
+    {
+      int fd;
+
+      if (gen_tempname (template, 0, flags, GT_NOCREATE))
+        pfatal ("Can't create temporary file %s", template);
+    retry:
+      fd = open (template, O_CREAT | O_EXCL | flags, mode);
+      if (fd == -1)
+        {
+	  if (errno == try_makedirs_errno)
+	    {
+	      makedirs (template);
+	      /* FIXME: When patch fails, this may leave around empty
+	         directories.  */
+	      try_makedirs_errno = 0;
+	      goto retry;
+	    }
+	  if (errno == EEXIST)
+	    continue;
+	  pfatal ("Can't create temporary file %s", template);
+	}
+      *name = template;
+      return fd;
+    }
 }

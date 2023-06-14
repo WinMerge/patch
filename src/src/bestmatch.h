@@ -1,21 +1,20 @@
-/*  Find a best match between two vectors.
+/* Find a best match between two vectors.
 
-    Copyright (C) 2009  Free Software Foundation, Inc.
-    Written by Andreas Gruenbacher <agruen@gnu.org>, 2009.
+   Copyright (C) 2009-2012 Free Software Foundation, Inc.
+   Written by Andreas Gruenbacher <agruen@gnu.org>, 2009.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.  */
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 
 /* Before including this file, you need to define:
@@ -37,7 +36,7 @@
  *
  * Returns the number of changes (insertions and deletions) required to get
  * from a[] to b[].  Returns MAX + 1 if a[] cannot be turned into b[] with
- * MAX or fewer changes.
+ * MAX or fewer changes, in which case *PY is not modified.
  *
  * MIN specifies the minimum number of elements in which a[] and b[] must
  * match. This allows to prevent trivial matches in which a sequence is
@@ -52,7 +51,7 @@
  * search.
  */
 
-OFFSET
+static OFFSET
 bestmatch(OFFSET xoff, OFFSET xlim, OFFSET yoff, OFFSET ylim,
 	  OFFSET min, OFFSET max, OFFSET *py)
 {
@@ -61,9 +60,12 @@ bestmatch(OFFSET xoff, OFFSET xlim, OFFSET yoff, OFFSET ylim,
     const OFFSET fmid = xoff - yoff;      /* Center diagonal. */
     OFFSET fmin = fmid;
     OFFSET fmax = fmid;
-    OFFSET V[2 * max + 3], *fd = V + max + 2 - fmid;
+    OFFSET *V, *fd;
     OFFSET fmid_plus_2_min, ymax = -1;
     OFFSET c;
+
+    V = malloc ((2 * max + 3) * sizeof (OFFSET));
+    fd = V + max + 1 - fmid;
 
     /*
        The number of elements that were matched in x and in y can be
@@ -87,7 +89,10 @@ bestmatch(OFFSET xoff, OFFSET xlim, OFFSET yoff, OFFSET ylim,
 	fmid_plus_2_min = fmid + 2 * min;
 	min += yoff;
 	if (min > ylim)
-	  return max + 1;
+	  {
+	    c = max + 1;
+	    goto free_and_return;
+	  }
       }
     else
       fmid_plus_2_min = 0;  /* disable this check */
@@ -132,7 +137,7 @@ bestmatch(OFFSET xoff, OFFSET xlim, OFFSET yoff, OFFSET ylim,
 		for (y = x - d;
 		     x < xlim && y < ylim && EQUAL_IDX (x, y);
 		     x++, y++)
-		  continue;
+		  /* do nothing */ ;
 		fd[d] = x;
 		if (x == xlim && y >= min
 		    && x + y - c >= fmid_plus_2_min)
@@ -151,6 +156,9 @@ bestmatch(OFFSET xoff, OFFSET xlim, OFFSET yoff, OFFSET ylim,
   done:
     if (py)
       *py = ymax;
+
+  free_and_return:
+    free (V);
     return c;
 }
 

@@ -1,6 +1,6 @@
 # Check for setmode, DOS style.
 
-# Copyright (C) 2001, 2002 Free Software Foundation, Inc.
+# Copyright (C) 2001-2002, 2011-2012 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 # USA.
 
 AC_DEFUN([AC_FUNC_SETMODE_DOS],
-  [AC_CHECK_HEADERS(fcntl.h unistd.h)
+  [AC_CHECK_HEADERS([fcntl.h unistd.h])
    AC_CACHE_CHECK([for DOS-style setmode],
      [ac_cv_func_setmode_dos],
      [AC_TRY_LINK(
@@ -33,6 +33,6 @@ AC_DEFUN([AC_FUNC_SETMODE_DOS],
 	[ac_cv_func_setmode_dos=yes],
 	[ac_cv_func_setmode_dos=no])])
    if test $ac_cv_func_setmode_dos = yes; then
-     AC_DEFINE(HAVE_SETMODE_DOS, 1,
+     AC_DEFINE([HAVE_SETMODE_DOS], [1],
        [Define to 1 if you have the DOS-style `setmode' function.])
    fi])

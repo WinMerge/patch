@@ -1,4 +1,4 @@
-# Copyright (C) 2009 Free Software Foundation, Inc.
+# Copyright (C) 2009, 2011-2012 Free Software Foundation, Inc.
 #
 # Copying and distribution of this file, with or without modification,
 # in any medium, are permitted without royalty provided the copyright
@@ -9,7 +9,6 @@
 . $srcdir/test-lib.sh
 
 require_cat
-require_diff
 use_local_patch
 use_tmpdir
 
@@ -17,13 +16,14 @@ use_tmpdir
 
 echo one > f
 
+preserve_trailing_blank=
 cat > f.diff <<EOF
 --- f
 +++ f
 @@ -1,2 +1,2 @@
 -1
 +1a
- 
+ $preserve_trailing_blank
 \ No newline at end of file
 EOF
 

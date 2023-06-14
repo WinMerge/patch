@@ -1,13 +1,13 @@
 /* inputting files to be patched */
 
 /* Copyright (C) 1986, 1988 Larry Wall
-   Copyright (C) 1991, 1992, 1993, 1997, 1998, 1999, 2002, 2003, 2006,
-   2009 Free Software Foundation, Inc.
+   Copyright (C) 1991-1993, 1997-1999, 2002-2003, 2006, 2009-2012 Free Software
+   Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
+   This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
-   any later version.
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -15,14 +15,10 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; see the file COPYING.
-   If not, write to the Free Software Foundation,
-   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #define XTERN extern
 #include <common.h>
-#include <backupfile.h>
-#include <pch.h>
 #include <quotearg.h>
 #include <util.h>
 #include <xalloc.h>
@@ -41,8 +37,8 @@ static size_t tibufsize;		/* size of plan b buffers */
 #endif
 static int tifd = -1;			/* plan b virtual string array */
 static char *tibuf[2];			/* plan b buffers */
-static LINENUM tiline[2] = {-1, -1};	/* 1st line in each buffer */
-static LINENUM lines_per_buf;		/* how many lines per buffer */
+static lin tiline[2] = {-1, -1};	/* 1st line in each buffer */
+static lin lines_per_buf;		/* how many lines per buffer */
 static size_t tireclen;			/* length of records in tmp file */
 static size_t last_line_size;		/* size of last input line */
 
@@ -65,7 +61,8 @@ re_input (void)
 	}
     }
     else {
-	close (tifd);
+	if (tifd >= 0)
+	  close (tifd);
 	tifd = -1;
 	if (tibuf[0])
 	  {
@@ -80,21 +77,17 @@ re_input (void)
 /* Construct the line index, somehow or other. */
 
 void
-scan_input (char *filename)
+scan_input (char *filename, mode_t file_type)
 {
     using_plan_a = ! (debug & 16) && plan_a (filename);
     if (!using_plan_a)
-	plan_b(filename);
-
-    if (verbosity != SILENT)
       {
-	filename = quotearg (filename);
-
-	if (verbosity == VERBOSE)
-	  say ("Patching file %s using Plan %s...\n",
-	       filename, using_plan_a ? "A" : "B");
-	else
-	  say ("patching file %s\n", filename);
+	if (! S_ISREG (file_type))
+	  {
+	    assert (S_ISLNK (file_type));
+	    fatal ("Can't handle %s %s", "symbolic link", quotearg (filename));
+	  }
+	plan_b(filename);
       }
 }
 
@@ -136,8 +129,8 @@ too_many_lines (char const *filename)
 }
 
 
-void
-get_input_file (char const *filename, char const *outname)
+bool
+get_input_file (char const *filename, char const *outname, mode_t mode)
 {
     bool elsewhere = strcmp (filename, outname) != 0;
     char const *cs;
@@ -145,10 +138,11 @@ get_input_file (char const *filename, char const *outname)
     char *getbuf;
 
     if (inerrno == -1)
-      inerrno = stat (filename, &instat) == 0 ? 0 : errno;
+      inerrno = lstat (filename, &instat) == 0 ? 0 : errno;
 
     /* Perhaps look for RCS or SCCS versions.  */
-    if (patch_get
+    if (S_ISREG (mode)
+	&& patch_get
 	&& invc != 0
 	&& (inerrno
 	    || (! elsewhere
@@ -193,8 +187,7 @@ get_input_file (char const *filename, char const *outname)
 	      inerrno = 0;
 
 	    free (getbuf);
-	    if (diffbuf)
-	      free (diffbuf);
+	    free (diffbuf);
       }
 
     if (inerrno)
@@ -202,9 +195,15 @@ get_input_file (char const *filename, char const *outname)
 	instat.st_mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH;
 	instat.st_size = 0;
       }
-    else if (! S_ISREG (instat.st_mode))
-      fatal ("File %s is not a regular file -- can't patch",
-	     quotearg (filename));
+    else if (! ((S_ISREG (mode) || S_ISLNK (mode))
+	        && (mode & S_IFMT) == (instat.st_mode & S_IFMT)))
+      {
+	say ("File %s is not a %s -- can't patch\n",
+	     quotearg (filename),
+	     S_ISLNK (mode) ? "symbolic link" : "regular file");
+	return false;
+      }
+    return true;
 }
 
 
@@ -213,11 +212,11 @@ get_input_file (char const *filename, char const *outname)
 static bool
 plan_a (char const *filename)
 {
-  register char const *s;
-  register char const *lim;
-  register char const **ptr;
-  register char *buffer;
-  register LINENUM iline;
+  char const *s;
+  char const *lim;
+  char const **ptr;
+  char *buffer;
+  lin iline;
   size_t size = instat.st_size;
 
   /* Fail if the file size doesn't fit in a size_t,
@@ -230,34 +229,50 @@ plan_a (char const *filename)
      When creating files, the files do not actually exist.  */
   if (size)
     {
-      int ifd = open (filename, O_RDONLY|binary_transput);
-      size_t buffered = 0, n;
-      if (ifd < 0)
-	pfatal ("can't open file %s", quotearg (filename));
+      if (S_ISREG (instat.st_mode))
+        {
+	  int ifd = open (filename, O_RDONLY|binary_transput);
+	  size_t buffered = 0, n;
+	  if (ifd < 0)
+	    pfatal ("can't open file %s", quotearg (filename));
 
-      while (size - buffered != 0)
-	{
-	  n = read (ifd, buffer + buffered, size - buffered);
-	  if (n == 0)
+	  while (size - buffered != 0)
 	    {
-	      /* Some non-POSIX hosts exaggerate st_size in text mode;
-		 or the file may have shrunk!  */
-	      size = buffered;
-	      break;
+	      n = read (ifd, buffer + buffered, size - buffered);
+	      if (n == 0)
+		{
+		  /* Some non-POSIX hosts exaggerate st_size in text mode;
+		     or the file may have shrunk!  */
+		  size = buffered;
+		  break;
+		}
+	      if (n == (size_t) -1)
+		{
+		  /* Perhaps size is too large for this host.  */
+		  close (ifd);
+		  free (buffer);
+		  return false;
+		}
+	      buffered += n;
 	    }
-	  if (n == (size_t) -1)
-	    {
-	      /* Perhaps size is too large for this host.  */
-	      close (ifd);
-	      free (buffer);
-	      return false;
-	    }
-	  buffered += n;
+
+	  if (close (ifd) != 0)
+	    read_fatal ();
 	}
-
-      if (close (ifd) != 0)
-	read_fatal ();
-    }
+      else if (S_ISLNK (instat.st_mode))
+	{
+	  ssize_t n;
+	  n = readlink (filename, buffer, size);
+	  if (n < 0)
+	    pfatal ("can't read %s %s", "symbolic link", quotearg (filename));
+	  size = n;
+	}
+      else
+	{
+	  free (buffer);
+	  return false;
+	}
+  }
 
   /* Scan the buffer and build array of pointers to lines.  */
   lim = buffer + size;
@@ -318,25 +333,31 @@ plan_a (char const *filename)
 static void
 plan_b (char const *filename)
 {
-  register FILE *ifp;
-  register int c;
-  register size_t len;
-  register size_t maxlen;
-  register bool found_revision;
-  register size_t i;
-  register char const *rev;
-  register size_t revlen;
-  register LINENUM line = 1;
-  int exclusive;
+  FILE *ifp;
+  int c;
+  size_t len;
+  size_t maxlen;
+  bool found_revision;
+  size_t i;
+  char const *rev;
+  size_t revlen;
+  lin line = 1;
 
   if (instat.st_size == 0)
     filename = NULL_DEVICE;
   if (! (ifp = fopen (filename, binary_transput ? "rb" : "r")))
     pfatal ("Can't open file %s", quotearg (filename));
-  exclusive = TMPINNAME_needs_removal ? 0 : O_EXCL;
-  TMPINNAME_needs_removal = 1;
-  tifd = create_file (TMPINNAME, O_RDWR | O_BINARY | exclusive, (mode_t) 0,
-		      true);
+  if (TMPINNAME_needs_removal)
+    {
+      /* Reopen the existing temporary file. */
+      tifd = create_file (TMPINNAME, O_RDWR | O_BINARY, 0, true);
+    }
+  else
+    {
+      tifd = make_tempfile (&TMPINNAME, 'i', NULL, O_RDWR | O_BINARY,
+			    S_IRUSR | S_IWUSR);
+      TMPINNAME_needs_removal = 1;
+    }
   i = 0;
   len = 0;
   maxlen = 1;
@@ -376,7 +397,7 @@ plan_b (char const *filename)
     report_revision (found_revision);
   Fseek (ifp, 0, SEEK_SET);		/* rewind file */
   for (tibufsize = TIBUFSIZE_MINIMUM;  tibufsize < maxlen;  tibufsize <<= 1)
-    continue;
+    /* do nothing */ ;
   lines_per_buf = tibufsize / maxlen;
   tireclen = maxlen;
   tibuf[0] = xmalloc (2 * tibufsize);
@@ -423,10 +444,10 @@ plan_b (char const *filename)
    WHICHBUF is ignored when the file is in memory.  */
 
 char const *
-ifetch (LINENUM line, bool whichbuf, size_t *psize)
+ifetch (lin line, bool whichbuf, size_t *psize)
 {
-    register char const *q;
-    register char const *p;
+    char const *q;
+    char const *p;
 
     if (line < 1 || line > input_lines) {
 	*psize = 0;
@@ -437,8 +458,8 @@ ifetch (LINENUM line, bool whichbuf, size_t *psize)
 	*psize = i_ptr[line + 1] - p;
 	return p;
     } else {
-	LINENUM offline = line % lines_per_buf;
-	LINENUM baseline = line - offline;
+	lin offline = line % lines_per_buf;
+	lin baseline = line - offline;
 
 	if (tiline[0] == baseline)
 	    whichbuf = false;
@@ -456,7 +477,7 @@ ifetch (LINENUM line, bool whichbuf, size_t *psize)
 	    *psize = last_line_size;
 	else {
 	    for (q = p;  *q++ != '\n';  )
-		continue;
+		/* do nothing */ ;
 	    *psize = q - p;
 	}
 	return p;

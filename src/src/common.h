@@ -1,24 +1,22 @@
-/* common definitions for `patch' */
+/* common definitions for 'patch' */
 
 /* Copyright (C) 1986, 1988 Larry Wall
 
-   Copyright (C) 1990, 1991, 1992, 1993, 1997, 1998, 1999, 2002, 2003,
-   2006, 2009 Free Software Foundation, Inc.
+   Copyright (C) 1990-1993, 1997-1999, 2002-2003, 2006, 2009-2012 Free Software
+   Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
+   This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
-   any later version.
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-   See the GNU General Public License for more details.
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; see the file COPYING.
-   If not, write to the Free Software Foundation,
-   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #ifndef DEBUGGING
 #define DEBUGGING 1
@@ -33,39 +31,6 @@
 #include <time.h>
 
 #include <sys/stat.h>
-#if ! defined S_ISDIR && defined S_IFDIR
-# define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
-#endif
-#if ! defined S_ISREG && defined S_IFREG
-# define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
-#endif
-#ifndef S_IXOTH
-#define S_IXOTH 1
-#endif
-#ifndef S_IWOTH
-#define S_IWOTH 2
-#endif
-#ifndef S_IROTH
-#define S_IROTH 4
-#endif
-#ifndef S_IXGRP
-#define S_IXGRP (S_IXOTH << 3)
-#endif
-#ifndef S_IWGRP
-#define S_IWGRP (S_IWOTH << 3)
-#endif
-#ifndef S_IRGRP
-#define S_IRGRP (S_IROTH << 3)
-#endif
-#ifndef S_IXUSR
-#define S_IXUSR (S_IXOTH << 6)
-#endif
-#ifndef S_IWUSR
-#define S_IWUSR (S_IWOTH << 6)
-#endif
-#ifndef S_IRUSR
-#define S_IRUSR (S_IROTH << 6)
-#endif
 
 #include <limits.h>
 
@@ -74,13 +39,10 @@
 #elif HAVE_STDINT_H
 # include <stdint.h>
 #endif
-#ifndef SIZE_MAX
-#define SIZE_MAX ((size_t) -1)
-#endif
 
 #include <ctype.h>
 /* CTYPE_DOMAIN (C) is nonzero if the unsigned char C can safely be given
-   as an argument to <ctype.h> macros like `isspace'.  */
+   as an argument to <ctype.h> macros like 'isspace'.  */
 #if STDC_HEADERS
 #define CTYPE_DOMAIN(c) 1
 #else
@@ -94,19 +56,19 @@
 #define ISDIGIT(c) ((unsigned) (c) - '0' <= 9)
 #endif
 
+#include <progname.h>
 
 /* handy definitions */
 
 #define strEQ(s1,s2) (!strcmp(s1, s2))
 #define strnEQ(s1,s2,l) (!strncmp(s1, s2, l))
+#define ARRAY_SIZE(a) (sizeof (a) / sizeof ((a)[0]))
 
 /* typedefs */
 
-typedef off_t LINENUM;			/* must be signed */
+typedef off_t lin;			/* must be signed */
 
 /* globals */
-
-XTERN char *program_name;	/* The name this program was run with. */
 
 XTERN char *buf;			/* general purpose buffer */
 XTERN size_t bufsize;			/* allocated size of buf */
@@ -125,13 +87,13 @@ XTERN char const *origprae;
 XTERN char const *origbase;
 XTERN char const *origsuff;
 
-XTERN char const * volatile TMPINNAME;
-XTERN char const * volatile TMPOUTNAME;
-XTERN char const * volatile TMPPATNAME;
+XTERN char const * TMPINNAME;
+XTERN char const * TMPOUTNAME;
+XTERN char const * TMPPATNAME;
 
-XTERN int volatile TMPINNAME_needs_removal;
-XTERN int volatile TMPOUTNAME_needs_removal;
-XTERN int volatile TMPPATNAME_needs_removal;
+XTERN int TMPINNAME_needs_removal;
+XTERN int TMPOUTNAME_needs_removal;
+XTERN int TMPPATNAME_needs_removal;
 
 #ifdef DEBUGGING
 XTERN int debug;
@@ -157,15 +119,24 @@ enum diff
     NORMAL_DIFF,
     ED_DIFF,
     NEW_CONTEXT_DIFF,
-    UNI_DIFF
+    UNI_DIFF,
+    GIT_BINARY_DIFF
   };
 
 XTERN enum diff diff_type;
 
 XTERN char *revision;			/* prerequisite revision, if any */
 
-#if __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 6) || __STRICT_ANSI__
-# define __attribute__(x)
+#ifndef __attribute__
+/* The __attribute__ feature is available in gcc versions 2.5 and later.
+   The __-protected variants of the attributes 'format' and 'printf' are
+   accepted by gcc versions 2.6.4 (effectively 2.7) and later.
+   We enable __attribute__ only if these are supported too, because
+   gnulib and libintl do '#define printf __printf__' when they override
+   the 'printf' function.  */
+# if __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 7)
+#  define __attribute__(Spec)   /* empty */
+# endif
 #endif
 
 void fatal_exit (int) __attribute__ ((noreturn));
@@ -177,26 +148,8 @@ extern int errno;
 
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# ifndef lseek
-   off_t lseek ();
-# endif
-#endif
-#ifndef SEEK_SET
-#define SEEK_SET 0
-#endif
-#ifndef STDIN_FILENO
-#define STDIN_FILENO 0
-#endif
-#ifndef STDOUT_FILENO
-#define STDOUT_FILENO 1
-#endif
-#ifndef STDERR_FILENO
-#define STDERR_FILENO 2
-#endif
 #if HAVE_FSEEKO
   typedef off_t file_offset;
 # define file_seek fseeko
@@ -206,6 +159,7 @@ extern int errno;
 # define file_seek fseek
 # define file_tell ftell
 #endif
+
 #if ! (HAVE_GETEUID || defined geteuid)
 # if ! (HAVE_GETUID || defined getuid)
 #  define geteuid() (-1)
@@ -214,38 +168,7 @@ extern int errno;
 # endif
 #endif
 
-#if HAVE_FCNTL_H
-# include <fcntl.h>
-#endif
-#ifndef O_RDONLY
-#define O_RDONLY 0
-#endif
-#ifndef O_WRONLY
-#define O_WRONLY 1
-#endif
-#ifndef O_RDWR
-#define O_RDWR 2
-#endif
-#ifndef _O_BINARY
-#define _O_BINARY 0
-#endif
-#ifndef O_BINARY
-#define O_BINARY _O_BINARY
-#endif
-#ifndef O_CREAT
-#define O_CREAT 0
-#endif
-#ifndef O_EXCL
-#define O_EXCL 0
-#endif
-#ifndef O_TRUNC
-#define O_TRUNC 0
-#endif
-
-#ifdef MKDIR_TAKES_ONE_ARG
-# undef mkdir
-# define mkdir(name, mode) ((mkdir) (name))
-#endif
+#include <fcntl.h>
 
 #ifdef HAVE_SETMODE_DOS
   XTERN int binary_transput;	/* O_BINARY if binary i/o is desired */
@@ -273,20 +196,20 @@ struct outstate
 };
 
 /* offset in the input and output at which the previous hunk matched */
-XTERN LINENUM in_offset;
-XTERN LINENUM out_offset;
+XTERN lin in_offset;
+XTERN lin out_offset;
 
 /* how many input lines have been irretractably output */
-XTERN LINENUM last_frozen_line;
+XTERN lin last_frozen_line;
 
-bool copy_till (struct outstate *, LINENUM);
-bool similar (char const *, size_t, char const *, size_t);
+bool copy_till (struct outstate *, lin);
+bool similar (char const *, size_t, char const *, size_t) _GL_ATTRIBUTE_PURE;
 
 #ifdef ENABLE_MERGE
 enum conflict_style { MERGE_MERGE, MERGE_DIFF3 };
 XTERN enum conflict_style conflict_style;
 
-bool merge_hunk (int hunk, struct outstate *, LINENUM where, bool *);
+bool merge_hunk (int hunk, struct outstate *, lin where, bool *);
 #else
 # define merge_hunk(hunk, outstate, where, somefailed) false
 #endif

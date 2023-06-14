@@ -1,15 +1,15 @@
-# Copyright (C) 2009 Free Software Foundation, Inc.
+# Copyright (C) 2009, 2011-2012 Free Software Foundation, Inc.
 #
 # Copying and distribution of this file, with or without modification,
 # in any medium, are permitted without royalty provided the copyright
 # notice and this notice are preserved.
 
 # Patch must not overwrite backup files it has created itself.
+# (Backup file tests for symlinks are in tests/symlinks.)
 
 . $srcdir/test-lib.sh
 
 require_cat
-require_diff
 use_local_patch
 use_tmpdir
 
@@ -85,26 +85,28 @@ EOF
 
 # ==============================================================
 
-# This test case failed with a permission denied error with a
-# previous version of the remember-backup-files patch.
+echo one > f
 
 cat > f.diff <<EOF
---- f.orig
-+++ f
-@@ -1 +1 @@
+--- f
++++ /dev/null
+@@ -1 +0,0 @@
 -one
-+two
---- f.orig
+--- /dev/null
 +++ f
-@@ -1 +1 @@
--two
-+three
+@@ -0,0 +1 @@
++two
 EOF
 
-echo one > f
-chmod a=r f
+check 'patch --backup -p0 < f.diff' <<EOF
+patching file f
+patching file f
+EOF
 
-check 'patch -p0 < f.diff' <<EOF
-patching file f
-patching file f
+check 'cat f.orig' <<EOF
+one
+EOF
+
+check 'cat f' <<EOF
+two
 EOF

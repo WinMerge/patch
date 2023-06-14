@@ -2,13 +2,13 @@
 
 /* Copyright (C) 1984, 1985, 1986, 1987, 1988 Larry Wall
 
-   Copyright (C) 1989, 1990, 1991, 1992, 1993, 1997, 1998, 1999, 2002,
-   2003, 2006, 2009 Free Software Foundation, Inc.
+   Copyright (C) 1989-1993, 1997-1999, 2002-2003, 2006, 2009-2012 Free Software
+   Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
+   This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
-   any later version.
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,16 +16,13 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; see the file COPYING.
-   If not, write to the Free Software Foundation,
-   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #define XTERN
 #include <common.h>
 #undef XTERN
 #define XTERN extern
 #include <argmatch.h>
-#include <backupfile.h>
 #include <exitfail.h>
 #include <getopt.h>
 #include <inp.h>
@@ -34,27 +31,37 @@
 #include <util.h>
 #include <version.h>
 #include <xalloc.h>
+#include <gl_linked_list.h>
+#include <gl_xlist.h>
 
 /* procedures */
 
 static FILE *create_output_file (char const *, int);
-static LINENUM locate_hunk (LINENUM);
-static bool apply_hunk (struct outstate *, LINENUM);
-static bool patch_match (LINENUM, LINENUM, LINENUM, LINENUM);
+static lin locate_hunk (lin);
+static bool apply_hunk (struct outstate *, lin);
+static bool patch_match (lin, lin, lin, lin);
 static bool spew_output (struct outstate *, struct stat *);
-static char const *make_temp (char);
 static int numeric_string (char const *, bool, char const *);
 static void cleanup (void);
 static void get_some_switches (void);
-static void init_output (char const *, int, struct outstate *);
-static void init_reject (void);
+static void init_output (struct outstate *);
+static FILE *open_outfile (char const *);
+static void init_reject (char const *);
 static void reinitialize_almost_everything (void);
-static void remove_if_needed (char const *, int volatile *);
+static void remove_if_needed (char const *, int *);
 static void usage (FILE *, int) __attribute__((noreturn));
 
-static void abort_hunk (bool, bool);
+static void abort_hunk (char const *, bool, bool);
 static void abort_hunk_context (bool, bool);
 static void abort_hunk_unified (bool, bool);
+
+static void output_file (char const *, int *, const struct stat *, char const *,
+			 const struct stat *, mode_t, bool);
+
+static void init_files_to_delete (void);
+static void init_files_to_output (void);
+static void delete_files (void);
+static void output_files (struct stat const *);
 
 #ifdef ENABLE_MERGE
 static bool merge;
@@ -69,6 +76,7 @@ static char const *version_control;
 static char const *version_control_context;
 static bool remove_empty_files;
 static bool explicit_inname;
+static enum { RO_IGNORE, RO_WARN, RO_FAIL } read_only_behavior = RO_WARN;
 
 /* true if -R was specified on command line.  */
 static bool reverse_flag_specified;
@@ -80,16 +88,16 @@ static char const else_defined[] = "\n#else\n";
 static char const end_defined[] = "\n#endif\n";
 
 static int Argc;
-static char * const *Argv;
+static char **Argv;
 
 static FILE *rejfp;  /* reject file pointer */
 
 static char const *patchname;
 static char *rejname;
-static char const * volatile TMPREJNAME;
-static int volatile TMPREJNAME_needs_removal;
+static char const * TMPREJNAME;
+static int TMPREJNAME_needs_removal;
 
-static LINENUM maxfuzz = 2;
+static lin maxfuzz = 2;
 
 static char serrbuf[BUFSIZ];
 
@@ -101,13 +109,16 @@ main (int argc, char **argv)
     char const *val;
     bool somefailed = false;
     struct outstate outstate;
-    struct stat outst;
+    struct stat tmpoutst;
     char numbuf[LINENUM_LENGTH_BOUND + 1];
     bool written_to_rejname = false;
     bool apply_empty_patch = false;
+    mode_t file_type;
+    int outfd = -1;
+    bool have_git_diff = false;
 
     exit_failure = 2;
-    program_name = argv[0];
+    set_program_name (argv[0]);
     init_time ();
 
     setbuf(stderr, serrbuf);
@@ -138,35 +149,42 @@ main (int argc, char **argv)
     else if ((version_control = getenv ("VERSION_CONTROL")))
       version_control_context = "$VERSION_CONTROL";
 
-    /* Cons up the names of the global temporary files.
-       Do this before `cleanup' can possibly be called (e.g. by `pfatal').  */
-    TMPOUTNAME = make_temp ('o');
-    TMPINNAME = make_temp ('i');
-    TMPREJNAME = make_temp ('r');
-    TMPPATNAME = make_temp ('p');
-
     /* parse switches */
     Argc = argc;
     Argv = argv;
     get_some_switches();
 
+    /* Make get_date() assume that context diff headers use UTC. */
+    if (set_utc)
+      setenv ("TZ", "UTC", 1);
+
     if (make_backups | backup_if_mismatch)
       backup_type = get_version (version_control_context, version_control);
 
     init_backup_hash_table ();
-    init_output (outfile, 0, &outstate);
+    init_files_to_delete ();
+    init_files_to_output ();
+
+    init_output (&outstate);
+    if (outfile)
+      outstate.ofp = open_outfile (outfile);
 
     /* Make sure we clean up in case of disaster.  */
     set_signals (false);
 
     if (inname && outfile)
       {
+	/* When an input and an output filename is given and the patch is
+	   empty, copy the input file to the output file.  In this case, the
+	   input file must be a regular file (i.e., symlinks cannot be copied
+	   this way).  */
 	apply_empty_patch = true;
+	file_type = S_IFREG;
 	inerrno = -1;
       }
     for (
 	open_patch_file (patchname);
-	there_is_another_patch (! (inname || posixly_correct))
+	there_is_another_patch (! (inname || posixly_correct), &file_type)
 	  || apply_empty_patch;
 	reinitialize_almost_everything(),
 	  apply_empty_patch = false
@@ -174,43 +192,165 @@ main (int argc, char **argv)
       int hunk = 0;
       int failed = 0;
       bool mismatch = false;
-      char *outname = NULL;
+      char const *outname = NULL;
+
+      if (have_git_diff != pch_git_diff ())
+	{
+	  have_git_diff = ! have_git_diff;
+	  output_files (NULL);
+	}
+
+      if (TMPREJNAME_needs_removal)
+	{
+	  if (rejfp)
+	    {
+	      fclose (rejfp);
+	      rejfp = NULL;
+	    }
+	  remove_if_needed (TMPREJNAME, &TMPREJNAME_needs_removal);
+	}
+      if (TMPOUTNAME_needs_removal)
+        {
+	  if (outfd != -1)
+	    {
+	      close (outfd);
+	      outfd = -1;
+	    }
+	  remove_if_needed (TMPOUTNAME, &TMPOUTNAME_needs_removal);
+	}
+
+      if (! skip_rest_of_patch && ! file_type)
+	{
+	  say ("File %s: can't change file type from 0%o to 0%o.\n",
+	       quotearg (inname),
+	       pch_mode (reverse) & S_IFMT,
+	       pch_mode (! reverse) & S_IFMT);
+	  skip_rest_of_patch = true;
+	  somefailed = true;
+	}
 
       if (! skip_rest_of_patch)
 	{
-	  outname = outfile ? outfile : inname;
-	  get_input_file (inname, outname);
+	  if (outfile)
+	    outname = outfile;
+	  else if (pch_copy () || pch_rename ())
+	    outname = pch_name (! strcmp (inname, pch_name (OLD)));
+	  else
+	    outname = inname;
 	}
 
+      if (pch_git_diff () && ! skip_rest_of_patch)
+	{
+	  struct stat outstat;
+	  int outerrno = 0;
+
+	  /* Try to recognize concatenated git diffs based on the SHA1 hashes
+	     in the headers.  Will not always succeed for patches that rename
+	     or copy files.  */
+
+	  if (! strcmp (inname, outname))
+	    {
+	      if (inerrno == -1)
+		inerrno = lstat (inname, &instat) ? errno : 0;
+	      outstat = instat;
+	      outerrno = inerrno;
+	    }
+	  else
+	    outerrno = lstat (outname, &outstat) ? errno : 0;
+
+	  if (! outerrno)
+	    {
+	      if (has_queued_output (&outstat))
+		{
+		  output_files (&outstat);
+		  outerrno = lstat (outname, &outstat) ? errno : 0;
+		  inerrno = -1;
+		}
+	      if (! outerrno)
+		set_queued_output (&outstat, true);
+	    }
+	}
+
+      if (! skip_rest_of_patch)
+	{
+	  if (! get_input_file (inname, outname, file_type))
+	    {
+	      skip_rest_of_patch = true;
+	      somefailed = true;
+	    }
+	}
+
+      if (read_only_behavior != RO_IGNORE
+	  && ! inerrno && ! S_ISLNK (instat.st_mode)
+	  && access (inname, W_OK) != 0)
+	{
+	  say ("File %s is read-only; ", quotearg (inname));
+	  if (read_only_behavior == RO_WARN)
+	    say ("trying to patch anyway\n");
+	  else
+	    {
+	      say ("refusing to patch\n");
+	      skip_rest_of_patch = true;
+	      somefailed = true;
+	    }
+	}
+
+      tmpoutst.st_size = -1;
+      outfd = make_tempfile (&TMPOUTNAME, 'o', outname,
+			     O_WRONLY | binary_transput, instat.st_mode);
+      TMPOUTNAME_needs_removal = 1;
       if (diff_type == ED_DIFF) {
 	outstate.zero_output = false;
 	somefailed |= skip_rest_of_patch;
-	do_ed_script (outstate.ofp);
+	do_ed_script (inname, TMPOUTNAME, &TMPOUTNAME_needs_removal,
+		      outstate.ofp);
 	if (! dry_run && ! outfile && ! skip_rest_of_patch)
 	  {
-	    struct stat statbuf;
-	    if (stat (TMPOUTNAME, &statbuf) != 0)
+	    if (fstat (outfd, &tmpoutst) != 0)
 	      pfatal ("%s", TMPOUTNAME);
-	    outstate.zero_output = statbuf.st_size == 0;
+	    outstate.zero_output = tmpoutst.st_size == 0;
 	  }
+	close (outfd);
+	outfd = -1;
       } else {
 	int got_hunk;
 	bool apply_anyway = merge;  /* don't try to reverse when merging */
 
+	if (! skip_rest_of_patch && diff_type == GIT_BINARY_DIFF) {
+	  say ("File %s: git binary diffs are not supported.\n",
+	       quotearg (outname));
+	  skip_rest_of_patch = true;
+	  somefailed = true;
+	}
 	/* initialize the patched file */
 	if (! skip_rest_of_patch && ! outfile)
 	  {
-	    int exclusive = TMPOUTNAME_needs_removal ? 0 : O_EXCL;
-	    TMPOUTNAME_needs_removal = 1;
-	    init_output (TMPOUTNAME, exclusive, &outstate);
+	    init_output (&outstate);
+	    outstate.ofp = fdopen(outfd, binary_transput ? "wb" : "w");
+	    if (! outstate.ofp)
+	      pfatal ("%s", TMPOUTNAME);
 	  }
 
-	/* initialize reject file */
-	init_reject ();
-
 	/* find out where all the lines are */
-	if (!skip_rest_of_patch)
-	    scan_input (inname);
+	if (!skip_rest_of_patch) {
+	    scan_input (inname, file_type);
+
+	    if (verbosity != SILENT)
+	      {
+		bool renamed = strcmp (inname, outname);
+
+		say ("patching %s %s%c",
+		     S_ISLNK (file_type) ? "symbolic link" : "file",
+		     quotearg (outname), renamed ? ' ' : '\n');
+		if (renamed)
+		  say ("(%s from %s)\n",
+		       pch_copy () ? "copied" :
+		       (pch_rename () ? "renamed" : "read"),
+		       inname);
+		if (verbosity == VERBOSE)
+		  say ("Using Plan %s...\n", using_plan_a ? "A" : "B");
+	      }
+	}
 
 	/* from here on, open no standard i/o files, because malloc */
 	/* might misfire and we can't catch it easily */
@@ -218,10 +358,10 @@ main (int argc, char **argv)
 	/* apply each hunk of patch */
 	while (0 < (got_hunk = another_hunk (diff_type, reverse)))
 	  {
-	    LINENUM where = 0; /* Pacify `gcc -Wall'.  */
-	    LINENUM newwhere;
-	    LINENUM fuzz = 0;
-	    LINENUM mymaxfuzz;
+	    lin where = 0; /* Pacify 'gcc -Wall'.  */
+	    lin newwhere;
+	    lin fuzz = 0;
+	    lin mymaxfuzz;
 
 	    if (merge)
 	      {
@@ -230,10 +370,10 @@ main (int argc, char **argv)
 	      }
 	    else
 	      {
-		LINENUM prefix_context = pch_prefix_context ();
-		LINENUM suffix_context = pch_suffix_context ();
-		LINENUM context = (prefix_context < suffix_context
-				   ? suffix_context : prefix_context);
+		lin prefix_context = pch_prefix_context ();
+		lin suffix_context = pch_suffix_context ();
+		lin context = (prefix_context < suffix_context
+			       ? suffix_context : prefix_context);
 		mymaxfuzz = (maxfuzz < context ? maxfuzz : context);
 	      }
 
@@ -268,7 +408,7 @@ main (int argc, char **argv)
 			    if (where)
 			      {
 				apply_anyway = true;
-				fuzz--; /* Undo `++fuzz' below.  */
+				fuzz--; /* Undo '++fuzz' below.  */
 				where = 0;
 			      }
 			  }
@@ -281,6 +421,7 @@ main (int argc, char **argv)
 		    {
 		      fclose (outstate.ofp);
 		      outstate.ofp = 0;
+		      outfd = -1;
 		    }
 		}
 	    }
@@ -295,7 +436,7 @@ main (int argc, char **argv)
 			|| ! where
 			|| ! apply_hunk (&outstate, where))))
 	      {
-		abort_hunk (! failed, reverse);
+		abort_hunk (outname, ! failed, reverse);
 		failed++;
 		if (verbosity == VERBOSE ||
 		    (! skip_rest_of_patch && verbosity != SILENT))
@@ -331,12 +472,11 @@ main (int argc, char **argv)
 		    fclose (outstate.ofp);
 		    outstate.ofp = 0;
 		  }
-		fclose (rejfp);
 		continue;
 	      }
 
 	    /* Finish spewing out the new file.  */
-	    if (! spew_output (&outstate, &outst))
+	    if (! spew_output (&outstate, &tmpoutst))
 	      {
 		say ("Skipping patch.\n");
 		skip_rest_of_patch = true;
@@ -349,20 +489,16 @@ main (int argc, char **argv)
       if (! skip_rest_of_patch && ! outfile) {
 	  bool backup = make_backups
 			|| (backup_if_mismatch && (mismatch | failed));
-
 	  if (outstate.zero_output
 	      && (remove_empty_files
 		  || (pch_says_nonexistent (! reverse) == 2
-		      && ! posixly_correct)))
+		      && ! posixly_correct)
+		  || S_ISLNK (file_type)))
 	    {
-	      if (verbosity == VERBOSE)
-		say ("Removing file %s%s\n", quotearg (outname),
-		     dry_run ? " and any empty ancestor directories" : "");
 	      if (! dry_run)
-		{
-		  move_file (0, 0, 0, outname, 0, backup);
-		  removedirs (outname);
-		}
+		output_file (NULL, NULL, NULL, outname,
+			     (inname == outname) ? &instat : NULL,
+			     file_type | 0, backup);
 	    }
 	  else
 	    {
@@ -378,24 +514,28 @@ main (int argc, char **argv)
 
 	      if (! dry_run)
 		{
+		  mode_t old_mode = pch_mode (reverse);
+		  mode_t new_mode = pch_mode (! reverse);
+		  bool set_mode = new_mode && old_mode != new_mode;
+
 		  /* Avoid replacing files when nothing has changed.  */
-		  if (failed < hunk || diff_type == ED_DIFF)
+		  if (failed < hunk || diff_type == ED_DIFF || set_mode
+		      || pch_copy () || pch_rename ())
 		    {
-		      time_t t;
+		      enum file_attributes attr = 0;
+		      struct timespec new_time = pch_timestamp (! reverse);
+		      mode_t mode = file_type |
+			  ((new_mode ? new_mode : instat.st_mode) & S_IRWXUGO);
 
-		      move_file (TMPOUTNAME, &TMPOUTNAME_needs_removal, &outst,
-				 outname, instat.st_mode, backup);
-
-		      if ((set_time | set_utc)
-			  && (t = pch_timestamp (! reverse)) != (time_t) -1)
+		      if ((set_time | set_utc) && new_time.tv_sec != -1)
 			{
-			  struct utimbuf utimbuf;
-			  utimbuf.actime = utimbuf.modtime = t;
+			  struct timespec old_time = pch_timestamp (reverse);
 
 			  if (! force && ! inerrno
 			      && pch_says_nonexistent (reverse) != 2
-			      && (t = pch_timestamp (reverse)) != (time_t) -1
-			      && t != instat.st_mtime)
+			      && old_time.tv_sec != -1
+			      && timespec_cmp (old_time,
+					       get_stat_mtime (&instat)))
 			    say ("Not setting time of file %s "
 				 "(time mismatch)\n",
 				 quotearg (outname));
@@ -403,43 +543,47 @@ main (int argc, char **argv)
 			    say ("Not setting time of file %s "
 				 "(contents mismatch)\n",
 				 quotearg (outname));
-			  else if (utime (outname, &utimbuf) != 0)
-			    pfatal ("Can't set timestamp on file %s",
-				    quotearg (outname));
+			  else
+			    attr |= FA_TIMES;
 			}
 
-		      if (! inerrno)
+		      if (inerrno)
+			set_file_attributes (TMPOUTNAME, attr, NULL, NULL,
+					     mode, &new_time);
+		      else
 			{
-			  if (chmod (outname, instat.st_mode) != 0)
-			    pfatal ("Can't set permissions on file %s",
-				    quotearg (outname));
-			  if (geteuid () != instat.st_gid)
-			    {
-			      /* Fails if we are not in group instat.st_gid.  */
-			      chown (outname, -1, instat.st_gid);
-			    }
-			  /* FIXME: There may be other attributes to preserve.  */
+			  attr |= FA_IDS | FA_MODE | FA_XATTRS;
+			  set_file_attributes (TMPOUTNAME, attr, inname, &instat,
+					       mode, &new_time);
 			}
+
+		      output_file (TMPOUTNAME, &TMPOUTNAME_needs_removal,
+				   &tmpoutst, outname, NULL, mode, backup);
+
+		      if (pch_rename ())
+			output_file (NULL, NULL, NULL, inname, &instat,
+				     mode, backup);
 		    }
 		  else
-		    create_backup (outname, 0, 0, true);
+		    output_file (outname, NULL, &tmpoutst, NULL, NULL,
+				 file_type | 0, backup);
 		}
 	    }
       }
       if (diff_type != ED_DIFF) {
 	struct stat rejst;
 
-	if ((failed && fstat (fileno (rejfp), &rejst) != 0)
-	    || fclose (rejfp) != 0)
-	    write_fatal ();
 	if (failed) {
+	    if (fstat (fileno (rejfp), &rejst) != 0 || fclose (rejfp) != 0)
+	      write_fatal ();
+	    rejfp = NULL;
 	    somefailed = true;
 	    say ("%d out of %d hunk%s %s", failed, hunk, "s" + (hunk == 1),
 		 skip_rest_of_patch ? "ignored" : "FAILED");
 	    if (outname && (! rejname || strcmp (rejname, "-") != 0)) {
 		char *rej = rejname;
 		if (!rejname) {
-		    /* FIXME: This should really be done differnely!  */
+		    /* FIXME: This should really be done differently!  */
 		    const char *s = simple_backup_suffix;
 		    size_t len;
 		    simple_backup_suffix = ".rej";
@@ -456,7 +600,8 @@ main (int argc, char **argv)
 		      {
 			if (! written_to_rejname)
 			  {
-			    copy_file (TMPREJNAME, rejname, 0, 0, 0666, true);
+			    copy_file (TMPREJNAME, rejname, 0, 0,
+				       S_IFREG | 0666, true);
 			    written_to_rejname = true;
 			  }
 			else
@@ -467,14 +612,14 @@ main (int argc, char **argv)
 			struct stat oldst;
 			int olderrno;
 
-			olderrno = stat (rej, &oldst) ? errno : 0;
+			olderrno = lstat (rej, &oldst) ? errno : 0;
 			if (olderrno && olderrno != ENOENT)
 			  write_fatal ();
-		        if (! olderrno && file_already_seen (&oldst))
+		        if (! olderrno && lookup_file_id (&oldst) == CREATED)
 			  append_to_file (TMPREJNAME, rej);
 			else
 			  move_file (TMPREJNAME, &TMPREJNAME_needs_removal,
-				     &rejst, rej, 0666, false);
+				     &rejst, rej, S_IFREG | 0666, false);
 		      }
 		  }
 		if (!rejname)
@@ -487,6 +632,8 @@ main (int argc, char **argv)
     }
     if (outstate.ofp && (ferror (outstate.ofp) || fclose (outstate.ofp) != 0))
       write_fatal ();
+    output_files (NULL);
+    delete_files ();
     cleanup ();
     if (somefailed)
       exit (1);
@@ -524,7 +671,7 @@ reinitialize_almost_everything (void)
 }
 
 static char const shortopts[] = "bB:cd:D:eEfF:g:i:l"
-#if 0 && defined(ENABLE_MERGE)
+#if 0 && defined ENABLE_MERGE
 				"m"
 #endif
 				"nNo:p:r:RstTuvV:x:Y:z:Z";
@@ -540,7 +687,7 @@ static struct option const longopts[] =
   {"remove-empty-files", no_argument, NULL, 'E'},
   {"force", no_argument, NULL, 'f'},
   {"fuzz", required_argument, NULL, 'F'},
-  {"get", no_argument, NULL, 'g'},
+  {"get", required_argument, NULL, 'g'},
   {"input", required_argument, NULL, 'i'},
   {"ignore-whitespace", no_argument, NULL, 'l'},
 #ifdef ENABLE_MERGE
@@ -572,6 +719,7 @@ static struct option const longopts[] =
   {"posix", no_argument, NULL, CHAR_MAX + 7},
   {"quoting-style", required_argument, NULL, CHAR_MAX + 8},
   {"reject-format", required_argument, NULL, CHAR_MAX + 9},
+  {"read-only", required_argument, NULL, CHAR_MAX + 10},
   {NULL, no_argument, NULL, 0}
 };
 
@@ -637,6 +785,8 @@ static char const *const option_help[] =
 "  -d DIR  --directory=DIR  Change the working directory to DIR first.",
 "  --reject-format=FORMAT  Create 'context' or 'unified' rejects.",
 "  --binary  Read and write data in binary mode.",
+"  --read-only=BEHAVIOR  How to handle read-only input files: 'ignore' that they",
+"                        are read-only, 'warn' (default), or 'fail'.",
 "",
 "  -v  --version  Output version info.",
 "  --help  Output this help.",
@@ -652,7 +802,7 @@ usage (FILE *stream, int status)
 
   if (status != 0)
     {
-      fprintf (stream, "%s: Try `%s --help' for more information.\n",
+      fprintf (stream, "%s: Try '%s --help' for more information.\n",
 	       program_name, Argv[0]);
     }
   else
@@ -671,10 +821,9 @@ usage (FILE *stream, int status)
 static void
 get_some_switches (void)
 {
-    register int optc;
+    int optc;
 
-    if (rejname)
-	free (rejname);
+    free (rejname);
     rejname = 0;
     if (optind == Argc)
 	return;
@@ -684,8 +833,8 @@ get_some_switches (void)
 	    case 'b':
 		make_backups = true;
 		 /* Special hack for backward compatibility with CVS 1.9.
-		    If the last 4 args are `-b SUFFIX ORIGFILE PATCHFILE',
-		    treat `-b' as if it were `-b -z'.  */
+		    If the last 4 args are '-b SUFFIX ORIGFILE PATCHFILE',
+		    treat '-b' as if it were '-b -z'.  */
 		if (Argc - optind == 3
 		    && strcmp (Argv[optind - 1], "-b") == 0
 		    && ! (Argv[optind + 0][0] == '-' && Argv[optind + 0][1])
@@ -694,7 +843,7 @@ get_some_switches (void)
 		  {
 		    optarg = Argv[optind++];
 		    if (verbosity != SILENT)
-		      say ("warning: the `-b %s' option is obsolete; use `-b -z %s' instead\n",
+		      say ("warning: the '-b %s' option is obsolete; use '-b -z %s' instead\n",
 			   optarg, optarg);
 		    goto case_z;
 		  }
@@ -852,6 +1001,16 @@ get_some_switches (void)
 		else
 		  usage (stderr, 2);
 		break;
+	    case CHAR_MAX + 10:
+		if (strcmp (optarg, "ignore") == 0)
+		  read_only_behavior = RO_IGNORE;
+		else if (strcmp (optarg, "warn") == 0)
+		  read_only_behavior = RO_WARN;
+		else if (strcmp (optarg, "fail") == 0)
+		  read_only_behavior = RO_FAIL;
+		else
+		  usage (stderr, 2);
+		break;
 	    default:
 		usage (stderr, 2);
 	}
@@ -915,23 +1074,23 @@ numeric_string (char const *string,
 
 /* Attempt to find the right place to apply this hunk of patch. */
 
-static LINENUM
-locate_hunk (LINENUM fuzz)
+static lin
+locate_hunk (lin fuzz)
 {
-    register LINENUM first_guess = pch_first () + in_offset;
-    register LINENUM offset;
-    LINENUM pat_lines = pch_ptrn_lines();
-    LINENUM prefix_context = pch_prefix_context ();
-    LINENUM suffix_context = pch_suffix_context ();
-    LINENUM context = (prefix_context < suffix_context
-		       ? suffix_context : prefix_context);
-    LINENUM prefix_fuzz = fuzz + prefix_context - context;
-    LINENUM suffix_fuzz = fuzz + suffix_context - context;
-    LINENUM max_where = input_lines - (pat_lines - suffix_fuzz) + 1;
-    LINENUM min_where = last_frozen_line + 1 - (prefix_context - prefix_fuzz);
-    LINENUM max_pos_offset = max_where - first_guess;
-    LINENUM max_neg_offset = first_guess - min_where;
-    LINENUM max_offset = (max_pos_offset < max_neg_offset
+    lin first_guess = pch_first () + in_offset;
+    lin offset;
+    lin pat_lines = pch_ptrn_lines();
+    lin prefix_context = pch_prefix_context ();
+    lin suffix_context = pch_suffix_context ();
+    lin context = (prefix_context < suffix_context
+		   ? suffix_context : prefix_context);
+    lin prefix_fuzz = fuzz + prefix_context - context;
+    lin suffix_fuzz = fuzz + suffix_context - context;
+    lin max_where = input_lines - (pat_lines - suffix_fuzz) + 1;
+    lin min_where = last_frozen_line + 1 - (prefix_context - prefix_fuzz);
+    lin max_pos_offset = max_where - first_guess;
+    lin max_neg_offset = first_guess - min_where;
+    lin max_offset = (max_pos_offset < max_neg_offset
 			  ? max_neg_offset : max_pos_offset);
 
     if (!pat_lines)			/* null range matches always */
@@ -953,7 +1112,7 @@ locate_hunk (LINENUM fuzz)
 	offset = 1 - first_guess;
 	if (last_frozen_line <= prefix_context
 	    && offset <= max_pos_offset
-	    && patch_match (first_guess, offset, (LINENUM) 0, suffix_fuzz))
+	    && patch_match (first_guess, offset, 0, suffix_fuzz))
 	  {
 	    in_offset += offset;
 	    return first_guess + offset;
@@ -969,7 +1128,7 @@ locate_hunk (LINENUM fuzz)
 	/* Can only match end of file.  */
 	offset = first_guess - (input_lines - pat_lines + 1);
 	if (offset <= max_neg_offset
-	    && patch_match (first_guess, -offset, prefix_fuzz, (LINENUM) 0))
+	    && patch_match (first_guess, -offset, prefix_fuzz, 0))
 	  {
 	    in_offset -= offset;
 	    return first_guess - offset;
@@ -1003,8 +1162,8 @@ locate_hunk (LINENUM fuzz)
     return 0;
 }
 
-static void
-mangled_patch (LINENUM old, LINENUM new)
+static void __attribute__ ((noreturn))
+mangled_patch (lin old, lin new)
 {
   char numbuf0[LINENUM_LENGTH_BOUND + 1];
   char numbuf1[LINENUM_LENGTH_BOUND + 1];
@@ -1020,7 +1179,7 @@ mangled_patch (LINENUM old, LINENUM new)
 /* Output a line number range in unified format.  */
 
 static void
-print_unidiff_range (FILE *fp, LINENUM start, LINENUM count)
+print_unidiff_range (FILE *fp, lin start, lin count)
 {
   char numbuf0[LINENUM_LENGTH_BOUND + 1];
   char numbuf1[LINENUM_LENGTH_BOUND + 1];
@@ -1049,7 +1208,6 @@ print_header_line (FILE *fp, const char *tag, bool reverse)
   const char *name = pch_name (reverse);
   const char *timestr = pch_timestr (reverse);
 
-  /* FIXME: include timestamp as well. */
   fprintf (fp, "%s %s%s\n", tag, name ? name : "/dev/null",
 	   timestr ? timestr : "");
 }
@@ -1059,25 +1217,24 @@ print_header_line (FILE *fp, const char *tag, bool reverse)
 static void
 abort_hunk_unified (bool header, bool reverse)
 {
-  FILE *fp = rejfp;
-  register LINENUM old = 1;
-  register LINENUM lastline = pch_ptrn_lines ();
-  register LINENUM new = lastline + 1;
+  lin old = 1;
+  lin lastline = pch_ptrn_lines ();
+  lin new = lastline + 1;
 
   if (header)
     {
       if (pch_name (INDEX))
-	fprintf(fp, "Index: %s\n", pch_name (INDEX));
+	fprintf(rejfp, "Index: %s\n", pch_name (INDEX));
       print_header_line (rejfp, "---", reverse);
       print_header_line (rejfp, "+++", ! reverse);
     }
 
   /* Add out_offset to guess the same as the previous successful hunk.  */
-  fprintf (fp, "@@ -");
-  print_unidiff_range (fp, pch_first () + out_offset, lastline);
-  fprintf (fp, " +");
-  print_unidiff_range (fp, pch_newfirst () + out_offset, pch_repl_lines ());
-  fprintf (fp, " @@\n");
+  fprintf (rejfp, "@@ -");
+  print_unidiff_range (rejfp, pch_first () + out_offset, lastline);
+  fprintf (rejfp, " +");
+  print_unidiff_range (rejfp, pch_newfirst () + out_offset, pch_repl_lines ());
+  fprintf (rejfp, " @@\n");
 
   while (pch_char (new) == '=' || pch_char (new) == '\n')
     new++;
@@ -1089,13 +1246,13 @@ abort_hunk_unified (bool header, bool reverse)
     {
       for (;  pch_char (old) == '-';  old++)
 	{
-	  fputc ('-', fp);
-	  pch_write_line (old, fp);
+	  fputc ('-', rejfp);
+	  pch_write_line (old, rejfp);
 	}
       for (;  pch_char (new) == '+';  new++)
 	{
-	  fputc ('+', fp);
-	  pch_write_line (new, fp);
+	  fputc ('+', rejfp);
+	  pch_write_line (new, rejfp);
 	}
 
       if (old > lastline)
@@ -1104,8 +1261,8 @@ abort_hunk_unified (bool header, bool reverse)
       if (pch_char (new) != pch_char (old))
 	mangled_patch (old, new);
 
-      fputc (' ', fp);
-      pch_write_line (old, fp);
+      fputc (' ', rejfp);
+      pch_write_line (old, rejfp);
     }
   if (pch_char (new) != '^')
     mangled_patch (old, new);
@@ -1116,13 +1273,13 @@ abort_hunk_unified (bool header, bool reverse)
 static void
 abort_hunk_context (bool header, bool reverse)
 {
-    register LINENUM i;
-    register LINENUM pat_end = pch_end ();
+    lin i;
+    lin pat_end = pch_end ();
     /* add in out_offset to guess the same as the previous successful hunk */
-    LINENUM oldfirst = pch_first() + out_offset;
-    LINENUM newfirst = pch_newfirst() + out_offset;
-    LINENUM oldlast = oldfirst + pch_ptrn_lines() - 1;
-    LINENUM newlast = newfirst + pch_repl_lines() - 1;
+    lin oldfirst = pch_first() + out_offset;
+    lin newfirst = pch_newfirst() + out_offset;
+    lin oldlast = oldfirst + pch_ptrn_lines() - 1;
+    lin newlast = newfirst + pch_repl_lines() - 1;
     char const *stars =
       (int) NEW_CONTEXT_DIFF <= (int) diff_type ? " ****" : "";
     char const *minuses =
@@ -1183,8 +1340,10 @@ abort_hunk_context (bool header, bool reverse)
 /* Output the rejected hunk.  */
 
 static void
-abort_hunk (bool header, bool reverse)
+abort_hunk (char const *outname, bool header, bool reverse)
 {
+  if (! TMPREJNAME_needs_removal)
+    init_reject (outname);
   if (reject_format == UNI_DIFF
       || (reject_format == NO_DIFF && diff_type == UNI_DIFF))
     abort_hunk_unified (header, reverse);
@@ -1195,15 +1354,15 @@ abort_hunk (bool header, bool reverse)
 /* We found where to apply it (we hope), so do it. */
 
 static bool
-apply_hunk (struct outstate *outstate, LINENUM where)
+apply_hunk (struct outstate *outstate, lin where)
 {
-    register LINENUM old = 1;
-    register LINENUM lastline = pch_ptrn_lines ();
-    register LINENUM new = lastline+1;
-    register enum {OUTSIDE, IN_IFNDEF, IN_IFDEF, IN_ELSE} def_state = OUTSIDE;
-    register char const *R_do_defines = do_defines;
-    register LINENUM pat_end = pch_end ();
-    register FILE *fp = outstate->ofp;
+    lin old = 1;
+    lin lastline = pch_ptrn_lines ();
+    lin new = lastline+1;
+    enum {OUTSIDE, IN_IFNDEF, IN_IFDEF, IN_ELSE} def_state = OUTSIDE;
+    char const *R_do_defines = do_defines;
+    lin pat_end = pch_end ();
+    FILE *fp = outstate->ofp;
 
     where--;
     while (pch_char(new) == '=' || pch_char(new) == '\n')
@@ -1361,44 +1520,56 @@ create_output_file (char const *name, int open_flags)
 /* Open the new file. */
 
 static void
-init_output (char const *name, int open_flags, struct outstate *outstate)
+init_output (struct outstate *outstate)
 {
-  if (! name)
-    outstate->ofp = (FILE *) 0;
-  else if (strcmp (name, "-") != 0)
-    outstate->ofp = create_output_file (name, open_flags);
+  outstate->ofp = NULL;
+  outstate->after_newline = true;
+  outstate->zero_output = true;
+}
+
+static FILE *
+open_outfile (char const *name)
+{
+  if (strcmp (name, "-") != 0)
+    return create_output_file (name, 0);
   else
     {
+      FILE *ofp;
       int stdout_dup = dup (fileno (stdout));
-      outstate->ofp = fdopen (stdout_dup, "a");
-      if (stdout_dup == -1 || ! outstate->ofp)
+      if (stdout_dup == -1)
+	pfatal ("Failed to duplicate standard output");
+      ofp = fdopen (stdout_dup, "a");
+      if (! ofp)
 	pfatal ("Failed to duplicate standard output");
       if (dup2 (fileno (stderr), fileno (stdout)) == -1)
 	pfatal ("Failed to redirect messages to standard error");
+      /* FIXME: Do we need to switch stdout_dup into O_BINARY mode here? */
+      return ofp;
     }
-
-  outstate->after_newline = true;
-  outstate->zero_output = true;
 }
 
 /* Open a file to put hunks we can't locate. */
 
 static void
-init_reject (void)
+init_reject (char const *outname)
 {
-  int exclusive = TMPREJNAME_needs_removal ? 0 : O_EXCL;
+  int fd;
+  fd = make_tempfile (&TMPREJNAME, 'r', outname, O_WRONLY | binary_transput,
+		      0666);
   TMPREJNAME_needs_removal = 1;
-  rejfp = create_output_file (TMPREJNAME, exclusive);
+  rejfp = fdopen (fd, binary_transput ? "wb" : "w");
+  if (! rejfp)
+    pfatal ("Can't open stream for file %s", quotearg (TMPREJNAME));
 }
 
 /* Copy input file to output, up to wherever hunk is to be applied. */
 
 bool
-copy_till (register struct outstate *outstate, register LINENUM lastline)
+copy_till (struct outstate *outstate, lin lastline)
 {
-    register LINENUM R_last_frozen_line = last_frozen_line;
-    register FILE *fp = outstate->ofp;
-    register char const *s;
+    lin R_last_frozen_line = last_frozen_line;
+    FILE *fp = outstate->ofp;
+    char const *s;
     size_t size;
 
     if (R_last_frozen_line > lastline)
@@ -1455,14 +1626,13 @@ spew_output (struct outstate *outstate, struct stat *st)
 /* Does the patch pattern match at line base+offset? */
 
 static bool
-patch_match (LINENUM base, LINENUM offset,
-	     LINENUM prefix_fuzz, LINENUM suffix_fuzz)
+patch_match (lin base, lin offset, lin prefix_fuzz, lin suffix_fuzz)
 {
-    register LINENUM pline = 1 + prefix_fuzz;
-    register LINENUM iline;
-    register LINENUM pat_lines = pch_ptrn_lines () - suffix_fuzz;
+    lin pline = 1 + prefix_fuzz;
+    lin iline;
+    lin pat_lines = pch_ptrn_lines () - suffix_fuzz;
     size_t size;
-    register char const *p;
+    char const *p;
 
     for (iline=base+offset+prefix_fuzz; pline <= pat_lines; pline++,iline++) {
 	p = ifetch (iline, offset >= 0, &size);
@@ -1482,8 +1652,7 @@ patch_match (LINENUM base, LINENUM offset,
 /* Do two lines match with canonicalized white space? */
 
 bool
-similar (register char const *a, register size_t alen,
-	 register char const *b, register size_t blen)
+similar (char const *a, size_t alen, char const *b, size_t blen)
 {
   /* Ignore presence or absence of trailing newlines.  */
   alen  -=  alen && a[alen - 1] == '\n';
@@ -1512,43 +1681,224 @@ similar (register char const *a, register size_t alen,
     }
 }
 
-/* Make a temporary file.  */
+/* Deferred deletion of files. */
 
-#if HAVE_MKTEMP && ! HAVE_DECL_MKTEMP && ! defined mktemp
-char *mktemp (char *);
-#endif
+struct file_to_delete {
+  char *name;
+  struct stat st;
+  bool backup;
+};
 
-#ifndef TMPDIR
-#define TMPDIR "/tmp"
-#endif
+static gl_list_t files_to_delete;
 
-static char const *
-make_temp (char letter)
+static void
+init_files_to_delete (void)
 {
-  char *r;
-#if HAVE_MKTEMP
-  char const *tmpdir = getenv ("TMPDIR");	/* Unix tradition */
-  if (!tmpdir) tmpdir = getenv ("TMP");		/* DOS tradition */
-  if (!tmpdir) tmpdir = getenv ("TEMP");	/* another DOS tradition */
-  if (!tmpdir) tmpdir = TMPDIR;
-  r = xmalloc (strlen (tmpdir) + 10);
-  sprintf (r, "%s/p%cXXXXXX", tmpdir, letter);
+  files_to_delete = gl_list_create_empty (GL_LINKED_LIST, NULL, NULL, NULL, true);
+}
 
-  /* It is OK to use mktemp here, since the rest of the code always
-     opens temp files with O_EXCL.  It might be better to use mkstemp
-     to avoid some DoS problems, but simply substituting mkstemp for
-     mktemp here will not fix the DoS problems; a more extensive
-     change would be needed.  */
-  mktemp (r);
+static void
+delete_file_later (const char *name, const struct stat *st, bool backup)
+{
+  struct file_to_delete *file_to_delete;
+  struct stat st_tmp;
 
-  if (!*r)
-    pfatal ("mktemp");
-#else
-  r = xmalloc (L_tmpnam);
-  if (! (tmpnam (r) == r && *r))
-    pfatal ("tmpnam");
-#endif
-  return r;
+  if (! st)
+    {
+      if (lstat (name, &st_tmp) != 0)
+	pfatal ("Can't get file attributes of %s %s", "file", name);
+      st = &st_tmp;
+    }
+  file_to_delete = xmalloc (sizeof *file_to_delete);
+  file_to_delete->name = xstrdup (name);
+  file_to_delete->st = *st;
+  file_to_delete->backup = backup;
+  gl_list_add_last (files_to_delete, file_to_delete);
+  insert_file_id (st, DELETE_LATER);
+}
+
+static void
+delete_files (void)
+{
+  gl_list_iterator_t iter;
+  const void *elt;
+
+  iter = gl_list_iterator (files_to_delete);
+  while (gl_list_iterator_next (&iter, &elt, NULL))
+    {
+      const struct file_to_delete *file_to_delete = elt;
+
+      if (lookup_file_id (&file_to_delete->st) == DELETE_LATER)
+	{
+	  mode_t mode = file_to_delete->st.st_mode;
+
+	  if (verbosity == VERBOSE)
+	    say ("Removing %s %s\n",
+		 S_ISLNK (mode) ? "symbolic link" : "file",
+		 quotearg (file_to_delete->name));
+	    move_file (0, 0, 0, file_to_delete->name, mode,
+		       file_to_delete->backup);
+	    removedirs (file_to_delete->name);
+	}
+    }
+  gl_list_iterator_free (&iter);
+}
+
+/* Putting output files into place and removing them. */
+
+struct file_to_output {
+  char *from;
+  struct stat from_st;
+  char *to;
+  mode_t mode;
+  bool backup;
+};
+
+static gl_list_t files_to_output;
+
+static void
+output_file_later (char const *from, int *from_needs_removal, const struct stat *from_st,
+		   char const *to, mode_t mode, bool backup)
+{
+  struct file_to_output *file_to_output;
+
+  file_to_output = xmalloc (sizeof *file_to_output);
+  file_to_output->from = xstrdup (from);
+  file_to_output->from_st = *from_st;
+  file_to_output->to = to ? xstrdup (to) : NULL;
+  file_to_output->mode = mode;
+  file_to_output->backup = backup;
+  gl_list_add_last (files_to_output, file_to_output);
+  if (from_needs_removal)
+    *from_needs_removal = 0;
+}
+
+static void
+output_file_now (char const *from, int *from_needs_removal,
+		 const struct stat *from_st, char const *to,
+		 mode_t mode, bool backup)
+{
+  if (to == NULL)
+    {
+      if (backup)
+	create_backup (from, from_st, true);
+    }
+  else
+    {
+      assert (from_st->st_size != -1);
+      move_file (from, from_needs_removal, from_st, to, mode, backup);
+    }
+}
+
+static void
+output_file (char const *from, int *from_needs_removal,
+	     const struct stat *from_st, char const *to,
+	     const struct stat *to_st, mode_t mode, bool backup)
+{
+  if (from == NULL)
+    {
+      /* Remember which files should be deleted and only delete them when the
+	 entire input to patch has been processed.  This allows to correctly
+	 determine for which files backup files have already been created.  */
+
+      delete_file_later (to, to_st, backup);
+    }
+  else if (pch_git_diff () && pch_says_nonexistent (reverse) != 2)
+    {
+      /* In git-style diffs, the "before" state of each patch refers to the initial
+	 state before modifying any files, input files can be referenced more than
+	 once (when creating copies), and output files are modified at most once.
+	 However, the input to GNU patch may consist of multiple concatenated
+	 git-style diffs, which must be processed separately.  (The same output
+	 file may go through multiple revisions.)
+
+	 To implement this, we remember which files to /modify/ instead of
+	 modifying the files immediately, but we create /new/ output files
+	 immediately.  The new output files serve as markers to detect when a
+	 file is modified more than once; this allows to recognize most
+	 concatenated git-style diffs.
+      */
+
+      output_file_later (from, from_needs_removal, from_st, to, mode, backup);
+    }
+  else
+    output_file_now (from, from_needs_removal, from_st, to, mode, backup);
+}
+
+static void
+dispose_file_to_output (const void *elt)
+{
+  const struct file_to_output *file_to_output = elt;
+
+  free (file_to_output->from);
+  free (file_to_output->to);
+}
+
+static void
+init_files_to_output (void)
+{
+  files_to_output = gl_list_create_empty (GL_LINKED_LIST, NULL, NULL,
+					  dispose_file_to_output, true);
+}
+
+static void
+gl_list_clear (gl_list_t list)
+{
+  while (gl_list_size (list) > 0)
+    gl_list_remove_at (list, 0);
+}
+
+static void
+output_files (struct stat const *st)
+{
+  gl_list_iterator_t iter;
+  const void *elt;
+
+  iter = gl_list_iterator (files_to_output);
+  while (gl_list_iterator_next (&iter, &elt, NULL))
+    {
+      const struct file_to_output *file_to_output = elt;
+      int from_needs_removal = 1;
+      struct stat const *from_st = &file_to_output->from_st;
+
+      output_file_now (file_to_output->from, &from_needs_removal,
+		       from_st, file_to_output->to,
+		       file_to_output->mode, file_to_output->backup);
+      if (from_needs_removal)
+	unlink (file_to_output->from);
+
+      if (st && st->st_dev == from_st->st_dev && st->st_ino == from_st->st_ino)
+	{
+	  /* Free the list up to here. */
+	  for (;;)
+	    {
+	      const void *elt2 = gl_list_get_at (files_to_output, 0);
+	      gl_list_remove_at (files_to_output, 0);
+	      if (elt == elt2)
+		break;
+	    }
+	  gl_list_iterator_free (&iter);
+	  return;
+	}
+    }
+  gl_list_iterator_free (&iter);
+  gl_list_clear (files_to_output);
+}
+
+static void
+forget_output_files (void)
+{
+  gl_list_iterator_t iter = gl_list_iterator (files_to_output);
+  const void *elt;
+
+  while (gl_list_iterator_next (&iter, &elt, NULL))
+    {
+      const struct file_to_output *file_to_output = elt;
+
+      unlink (file_to_output->from);
+    }
+  gl_list_iterator_free (&iter);
+  gl_list_clear (files_to_output);
 }
 
 /* Fatal exit with cleanup. */
@@ -1565,7 +1915,7 @@ fatal_exit (int sig)
 }
 
 static void
-remove_if_needed (char const *name, int volatile *needs_removal)
+remove_if_needed (char const *name, int *needs_removal)
 {
   if (*needs_removal)
     {
@@ -1581,4 +1931,5 @@ cleanup (void)
   remove_if_needed (TMPOUTNAME, &TMPOUTNAME_needs_removal);
   remove_if_needed (TMPPATNAME, &TMPPATNAME_needs_removal);
   remove_if_needed (TMPREJNAME, &TMPREJNAME_needs_removal);
+  forget_output_files ();
 }

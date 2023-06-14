@@ -1,3 +1,27 @@
+Changes in version 2.7:
+
+* Patch no longer gets a failed assertion for certain mangled patches.
+* Ignore destination file names that are absolute or that contain a component
+  of "..".  This addresses CVE-2010-4651.
+* Support for most features of the "diff --git" format, including renames and
+  copies, permission changes, and symlink diffs.  Binary diffs are not
+  supported yet; patch will complain and skip them.
+* Support for double-quoted filenames: when a filename starts with a double
+  quote, it is interpreted as a C string literal.  The escape sequences \\, \",
+  \a, \b, \f, \n, \r, \t, \v, and \ooo (a three-digit octal number between 0
+  and 255) are recognized.
+* Refuse to apply a normal patch to a symlink.  (Previous versions of patch
+  were replacing the symlink with a regular file.)
+* When trying to modify a read-only file, warn about the potential problem
+  by default.  The --read-only command line option allows to change this
+  behavior.
+* Files to be deleted are deleted once the entire input has been processed, not
+  immediately.  This fixes a bug with numbered backup files.
+* When a timestamp specifies a time zone, honor that instead of assuming the
+  local time zone (--set-date) or Universal Coordinated Time (--set-utc).
+* Support for nanosecond precision timestamps.
+* Many portability and bug fixes.
+
 Changes in version 2.6.1:
 
 * Support for diff3(1) style merges which show the old, original, and new lines
@@ -275,8 +299,8 @@ Changes in version 2.0.12g8:
 
 
 
-Copyright (C) 1992, 1993, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2006, 2009
-Free Software Foundation, Inc.
+Copyright (C) 1992-1993, 1997-2003, 2006, 2009, 2011-2012 Free Software
+Foundation, Inc.
 
 This file is part of GNU Patch.
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2009 Free Software Foundation, Inc.
+# Copyright (C) 2009, 2011-2012 Free Software Foundation, Inc.
 #
 # Copying and distribution of this file, with or without modification,
 # in any medium, are permitted without royalty provided the copyright
@@ -9,7 +9,7 @@
 . $srcdir/test-lib.sh
 
 require_cat
-require_diff
+require_gnu_diff
 use_local_patch
 use_tmpdir
 
@@ -31,6 +31,8 @@ int foo()
   }
 EOF
 
+preserve_trailing_blank=
+
 diff -p -c -L a -L b a b > ab.diff
 touch c
 check 'patch c < ab.diff || cat c.rej' <<EOF
@@ -43,13 +45,13 @@ Hunk #1 FAILED at 2.
 *** 2,6 ****
     {
       /* waste a line */
-  
+  $preserve_trailing_blank
 !     return 1;
     }
 --- 2,6 ----
     {
       /* waste a line */
-  
+  $preserve_trailing_blank
 !     return 2;
     }
 EOF
