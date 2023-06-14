@@ -1,3 +1,85 @@
+2015-01-31  Andreas Gruenbacher  <agruen@gnu.org>
+
+	Upate NEWS
+
+	Fix indentation heuristic for context diffs
+	Diffs can be indented by a variable number of spaces, tabs, or X characters.
+	Make sure that intuit_diff_type() only accepts context diffs where the first
+	and second line are indented identically, or else another_hunk() will fail.
+	* src/pch.c (intuit_diff_type): Remember the indentation of the last line. Only
+	recognize context diff hunks with the same amount of indentation on the first
+	and second line.
+	* tests/garbage: New test case.
+	* tests/Makefile.am (TESTS): Add test case.
+
+2015-01-31  Quentin Casasnovas  <quentin.casasnovas@oracle.com>
+
+	patch: git-diff mode: do not change permissions if there isn't an explicit mode change.
+
+	tests: add a test case for unwanted mode changes.
+
+	test-lib.sh: factorize require_* functions
+	Since the code is identical when just checking if a utility is present on
+	the system or not, we can factorize it.
+
+2015-01-31  Andreas Gruenbacher  <agruen@gnu.org>
+
+	Add test case for patch behind symlink
+	* tests/symlinks: Add a test case where the patch file itself is in a path that
+	follows a symbolic link; we want to continue allowing that.
+
+2015-01-31  Tim Waugh  <twaugh@redhat.com>
+
+	Allow arbitrary symlink targets again
+	* src/util.c (symlink_target_is_valid): Remove.
+	(move_file): Remove symlink target checking.
+	* tests/symlinks: Update test case.
+
+2015-01-31  Andreas Gruenbacher  <agruen@gnu.org>
+
+	Update list of gnulib modules used
+	* bootstrap.conf (gnulib_modules): Remove lchmod, lstat, mkdir, readlink,
+	rename, mkdir, symlink, unlink, utimens. Add fchownat, fchmodat, fstatat,
+	mkdirat, openat, readlinkat, renameat, symlinkat, unlinkat, utimensat.
+	* src/util.h: Don't include <utimens.h> anymore.
+
+	Use symlink-safe system call replacements
+	Use the symlink-safe replacements for system calls in many places throughout
+	the code: In some places this makes patch safe against path traversal attacks;
+	in other places, it saves the kernel from having to re-traverse the pathnames.
+	* src/inp.c (plan_b): Use safe_open() + fdopen() instead of fopen().
+	* src/util.c (copy_attr): Document why we are safe here.
+	(create_backup): Use safe_open() instead of creat().
+
+2015-01-31  Tim Waugh  <twaugh@redhat.com>
+
+	Add symlink-safe system call replacements
+	Add wrappers around system calls that traverse relative pathnames without
+	following symlinks. Written by Tim Waugh <twaugh@redhat.com> and Andreas
+	Gruenbacher <agruenba@redhat.com>.
+	* src/safe.h: Declare functions here.
+	* src/safe.c: Implement safe_* system call replacements that do not follow
+	symlinks along pathnames. Pathname components are resolved with openat().
+	Lookup results are cached to keep the overhead reasonably low.
+	* tests/deep-directories: New path traversal cache test.
+	* src/Makefile.am (patch_SOURCES): Add safe.[ch].
+	* tests/Makefile.am (TESTS): Add new test.
+
+2015-01-31  Andreas Gruenbacher  <agruen@gnu.org>
+
+	build: update gnulib submodule to latest
+
+2015-01-31  Tim Waugh  <twaugh@redhat.com>
+
+	Avoid closing file descriptor twice
+	* src/patch.c (main): Make sure we don't close() outfd after passing it on to
+	fdopen(): the file descriptor might have been reused in the meantime.
+
+2015-01-29  Andreas Gruenbacher  <agruen@gnu.org>
+
+	Remove unused variable
+	* src/pch.c (name_is_valid): Remove unused variable.
+
 2015-01-22  Andreas Gruenbacher  <agruen@gnu.org>
 
 	Fix the fix for CVE-2015-1196

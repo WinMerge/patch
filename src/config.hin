@@ -18,6 +18,19 @@
 /* Define to the number of bits in type 'wint_t'. */
 #undef BITSIZEOF_WINT_T
 
+/* Define to 1 if chown fails to change ctime when at least one argument was
+   not -1. */
+#undef CHOWN_CHANGE_TIME_BUG
+
+/* Define if chown is not POSIX compliant regarding IDs of -1. */
+#undef CHOWN_FAILS_TO_HONOR_ID_OF_NEGATIVE_ONE
+
+/* Define if chown modifies symlinks. */
+#undef CHOWN_MODIFIES_SYMLINK
+
+/* Define to 1 if chown mishandles trailing slash. */
+#undef CHOWN_TRAILING_SLASH_BUG
+
 /* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
    systems. This function is required for `alloca.c' support on those systems.
    */
@@ -51,6 +64,14 @@
 
 /* Name of editor program. */
 #undef EDITOR_PROGRAM
+
+/* Define to 1 if your platform has fchownat, but it does not reject an empty
+   file name. */
+#undef FCHOWNAT_EMPTY_FILENAME_BUG
+
+/* Define to 1 if your platform has fchownat, but it cannot perform lchown
+   tasks. */
+#undef FCHOWNAT_NOFOLLOW_BUG
 
 /* Define this to 1 if F_DUPFD behavior does not match POSIX */
 #undef FCNTL_DUPFD_BUGGY
@@ -86,6 +107,14 @@
 #undef GNULIB_DIRNAME
 
 /* Define to a C preprocessor expression that evaluates to 1 or 0, depending
+   whether the gnulib module fchmodat shall be considered present. */
+#undef GNULIB_FCHMODAT
+
+/* Define to a C preprocessor expression that evaluates to 1 or 0, depending
+   whether the gnulib module fchownat shall be considered present. */
+#undef GNULIB_FCHOWNAT
+
+/* Define to a C preprocessor expression that evaluates to 1 or 0, depending
    whether the gnulib module fscanf shall be considered present. */
 #undef GNULIB_FSCANF
 
@@ -93,8 +122,16 @@
    whether the gnulib module malloc-gnu shall be considered present. */
 #undef GNULIB_MALLOC_GNU
 
+/* Define to a C preprocessor expression that evaluates to 1 or 0, depending
+   whether the gnulib module openat shall be considered present. */
+#undef GNULIB_OPENAT
+
 /* enable some gnulib portability checks */
 #undef GNULIB_PORTCHECK
+
+/* Define to 1 if printf and friends should be labeled with attribute
+   "__gnu_printf__" instead of "__printf__" */
+#undef GNULIB_PRINTF_ATTRIBUTE_FLAVOR_GNU
 
 /* Define to a C preprocessor expression that evaluates to 1 or 0, depending
    whether the gnulib module realloc-gnu shall be considered present. */
@@ -103,6 +140,10 @@
 /* Define to a C preprocessor expression that evaluates to 1 or 0, depending
    whether the gnulib module scanf shall be considered present. */
 #undef GNULIB_SCANF
+
+/* Define to a C preprocessor expression that evaluates to 1 or 0, depending
+   whether the gnulib module statat shall be considered present. */
+#undef GNULIB_STATAT
 
 /* Define to a C preprocessor expression that evaluates to 1 or 0, depending
    whether the gnulib module strerror shall be considered present. */
@@ -114,6 +155,12 @@
 
 /* Define to 1 when the gnulib module chdir should be tested. */
 #undef GNULIB_TEST_CHDIR
+
+/* Define to 1 when the gnulib module chown should be tested. */
+#undef GNULIB_TEST_CHOWN
+
+/* Define to 1 when the gnulib module cloexec should be tested. */
+#undef GNULIB_TEST_CLOEXEC
 
 /* Define to 1 when the gnulib module close should be tested. */
 #undef GNULIB_TEST_CLOSE
@@ -130,11 +177,26 @@
 /* Define to 1 when the gnulib module environ should be tested. */
 #undef GNULIB_TEST_ENVIRON
 
+/* Define to 1 when the gnulib module fchdir should be tested. */
+#undef GNULIB_TEST_FCHDIR
+
+/* Define to 1 when the gnulib module fchmodat should be tested. */
+#undef GNULIB_TEST_FCHMODAT
+
+/* Define to 1 when the gnulib module fchownat should be tested. */
+#undef GNULIB_TEST_FCHOWNAT
+
 /* Define to 1 when the gnulib module fcntl should be tested. */
 #undef GNULIB_TEST_FCNTL
 
 /* Define to 1 when the gnulib module fstat should be tested. */
 #undef GNULIB_TEST_FSTAT
+
+/* Define to 1 when the gnulib module fstatat should be tested. */
+#undef GNULIB_TEST_FSTATAT
+
+/* Define to 1 when the gnulib module getcwd should be tested. */
+#undef GNULIB_TEST_GETCWD
 
 /* Define to 1 when the gnulib module getdtablesize should be tested. */
 #undef GNULIB_TEST_GETDTABLESIZE
@@ -145,8 +207,8 @@
 /* Define to 1 when the gnulib module gettimeofday should be tested. */
 #undef GNULIB_TEST_GETTIMEOFDAY
 
-/* Define to 1 when the gnulib module lchmod should be tested. */
-#undef GNULIB_TEST_LCHMOD
+/* Define to 1 when the gnulib module lchown should be tested. */
+#undef GNULIB_TEST_LCHOWN
 
 /* Define to 1 when the gnulib module lstat should be tested. */
 #undef GNULIB_TEST_LSTAT
@@ -163,8 +225,23 @@
 /* Define to 1 when the gnulib module memchr should be tested. */
 #undef GNULIB_TEST_MEMCHR
 
+/* Define to 1 when the gnulib module mempcpy should be tested. */
+#undef GNULIB_TEST_MEMPCPY
+
+/* Define to 1 when the gnulib module memrchr should be tested. */
+#undef GNULIB_TEST_MEMRCHR
+
+/* Define to 1 when the gnulib module mkdirat should be tested. */
+#undef GNULIB_TEST_MKDIRAT
+
 /* Define to 1 when the gnulib module mktime should be tested. */
 #undef GNULIB_TEST_MKTIME
+
+/* Define to 1 when the gnulib module open should be tested. */
+#undef GNULIB_TEST_OPEN
+
+/* Define to 1 when the gnulib module openat should be tested. */
+#undef GNULIB_TEST_OPENAT
 
 /* Define to 1 when the gnulib module opendir should be tested. */
 #undef GNULIB_TEST_OPENDIR
@@ -178,6 +255,9 @@
 /* Define to 1 when the gnulib module readlink should be tested. */
 #undef GNULIB_TEST_READLINK
 
+/* Define to 1 when the gnulib module readlinkat should be tested. */
+#undef GNULIB_TEST_READLINKAT
+
 /* Define to 1 when the gnulib module realloc-posix should be tested. */
 #undef GNULIB_TEST_REALLOC_POSIX
 
@@ -186,6 +266,9 @@
 
 /* Define to 1 when the gnulib module rename should be tested. */
 #undef GNULIB_TEST_RENAME
+
+/* Define to 1 when the gnulib module renameat should be tested. */
+#undef GNULIB_TEST_RENAMEAT
 
 /* Define to 1 when the gnulib module rmdir should be tested. */
 #undef GNULIB_TEST_RMDIR
@@ -199,6 +282,9 @@
 /* Define to 1 when the gnulib module stat should be tested. */
 #undef GNULIB_TEST_STAT
 
+/* Define to 1 when the gnulib module strdup should be tested. */
+#undef GNULIB_TEST_STRDUP
+
 /* Define to 1 when the gnulib module strerror should be tested. */
 #undef GNULIB_TEST_STRERROR
 
@@ -211,14 +297,23 @@
 /* Define to 1 when the gnulib module symlink should be tested. */
 #undef GNULIB_TEST_SYMLINK
 
+/* Define to 1 when the gnulib module symlinkat should be tested. */
+#undef GNULIB_TEST_SYMLINKAT
+
 /* Define to 1 when the gnulib module time_r should be tested. */
 #undef GNULIB_TEST_TIME_R
 
 /* Define to 1 when the gnulib module unlink should be tested. */
 #undef GNULIB_TEST_UNLINK
 
+/* Define to 1 when the gnulib module unlinkat should be tested. */
+#undef GNULIB_TEST_UNLINKAT
+
 /* Define to 1 when the gnulib module unsetenv should be tested. */
 #undef GNULIB_TEST_UNSETENV
+
+/* Define to 1 when the gnulib module utimensat should be tested. */
+#undef GNULIB_TEST_UTIMENSAT
 
 /* Define to 1 when the gnulib module vasprintf should be tested. */
 #undef GNULIB_TEST_VASPRINTF
@@ -252,6 +347,9 @@
 /* Define to 1 if you have the `canonicalize_file_name' function. */
 #undef HAVE_CANONICALIZE_FILE_NAME
 
+/* Define to 1 if you have the `chown' function. */
+#undef HAVE_CHOWN
+
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
 
@@ -271,6 +369,10 @@
 /* Define to 1 if you have the declaration of `dirfd', and to 0 if you don't.
    */
 #undef HAVE_DECL_DIRFD
+
+/* Define to 1 if you have the declaration of `fchdir', and to 0 if you don't.
+   */
+#undef HAVE_DECL_FCHDIR
 
 /* Define to 1 if you have the declaration of `getc_unlocked', and to 0 if you
    don't. */
@@ -292,6 +394,10 @@
    don't. */
 #undef HAVE_DECL_MBSINIT
 
+/* Define to 1 if you have the declaration of `memrchr', and to 0 if you
+   don't. */
+#undef HAVE_DECL_MEMRCHR
+
 /* Define to 1 if you have the declaration of `program_invocation_name', and
    to 0 if you don't. */
 #undef HAVE_DECL_PROGRAM_INVOCATION_NAME
@@ -303,6 +409,10 @@
 /* Define to 1 if you have the declaration of `setenv', and to 0 if you don't.
    */
 #undef HAVE_DECL_SETENV
+
+/* Define to 1 if you have the declaration of `strdup', and to 0 if you don't.
+   */
+#undef HAVE_DECL_STRDUP
 
 /* Define to 1 if you have the declaration of `strerror_r', and to 0 if you
    don't. */
@@ -344,6 +454,15 @@
 /* Define if you have the declaration of environ. */
 #undef HAVE_ENVIRON_DECL
 
+/* Define to 1 if you have the `fchdir' function. */
+#undef HAVE_FCHDIR
+
+/* Define to 1 if you have the `fchmodat' function. */
+#undef HAVE_FCHMODAT
+
+/* Define to 1 if you have the `fchown' function. */
+#undef HAVE_FCHOWN
+
 /* Define to 1 if you have the `fcntl' function. */
 #undef HAVE_FCNTL
 
@@ -355,6 +474,9 @@
 
 /* Define to 1 if you have the <features.h> header file. */
 #undef HAVE_FEATURES_H
+
+/* Define to 1 if you have the `fstatat' function. */
+#undef HAVE_FSTATAT
 
 /* Define to 1 if you have the `futimens' function. */
 #undef HAVE_FUTIMENS
@@ -408,6 +530,9 @@
 /* Define to 1 if you have the `lchmod' function. */
 #undef HAVE_LCHMOD
 
+/* Define to 1 if you have the `lchown' function. */
+#undef HAVE_LCHOWN
+
 /* Define to 1 if you have the `link' function. */
 #undef HAVE_LINK
 
@@ -449,11 +574,20 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
+/* Define to 1 if you have the `mempcpy' function. */
+#undef HAVE_MEMPCPY
+
+/* Define to 1 if you have the `memrchr' function. */
+#undef HAVE_MEMRCHR
+
 /* Define to 1 if <limits.h> defines the MIN and MAX macros. */
 #undef HAVE_MINMAX_IN_LIMITS_H
 
 /* Define to 1 if <sys/param.h> defines the MIN and MAX macros. */
 #undef HAVE_MINMAX_IN_SYS_PARAM_H
+
+/* Define to 1 if you have the `mkdirat' function. */
+#undef HAVE_MKDIRAT
 
 /* Define to 1 if you have the `mprotect' function. */
 #undef HAVE_MPROTECT
@@ -464,6 +598,9 @@
 
 /* Define to 1 if you have the `nanotime' function. */
 #undef HAVE_NANOTIME
+
+/* Define to 1 if you have the `openat' function. */
+#undef HAVE_OPENAT
 
 /* Define to 1 if you have the `opendir' function. */
 #undef HAVE_OPENDIR
@@ -1042,6 +1179,9 @@
 /* Define to 1 if you have the `readlink' function. */
 #undef HAVE_READLINK
 
+/* Define to 1 if you have the `readlinkat' function. */
+#undef HAVE_READLINKAT
+
 /* Define to 1 if your system has a GNU libc compatible 'realloc' function,
    and to 0 otherwise. */
 #undef HAVE_REALLOC_GNU
@@ -1051,6 +1191,9 @@
 
 /* Define to 1 if you have the `realpath' function. */
 #undef HAVE_REALPATH
+
+/* Define to 1 if you have the `renameat' function. */
+#undef HAVE_RENAMEAT
 
 /* Define to 1 if you have the <search.h> header file. */
 #undef HAVE_SEARCH_H
@@ -1106,6 +1249,9 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
+/* Define to 1 if you have the `strdup' function. */
+#undef HAVE_STRDUP
+
 /* Define to 1 if you have the `strerror_r' function. */
 #undef HAVE_STRERROR_R
 
@@ -1151,6 +1297,9 @@
 
 /* Define to 1 if you have the `symlink' function. */
 #undef HAVE_SYMLINK
+
+/* Define to 1 if you have the `symlinkat' function. */
+#undef HAVE_SYMLINKAT
 
 /* Define to 1 if you have the <sys/bitypes.h> header file. */
 #undef HAVE_SYS_BITYPES_H
@@ -1199,6 +1348,9 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define to 1 if you have the `unlinkat' function. */
+#undef HAVE_UNLINKAT
+
 /* Define to 1 if you have the `unsetenv' function. */
 #undef HAVE_UNSETENV
 
@@ -1240,6 +1392,10 @@
 
 /* Define if you have the 'wint_t' type. */
 #undef HAVE_WINT_T
+
+/* Define to 1 if fstatat (..., 0) works. For example, it does not work in AIX
+   7.1. */
+#undef HAVE_WORKING_FSTATAT_ZERO_FLAG
 
 /* Define to 1 if O_NOATIME works. */
 #undef HAVE_WORKING_O_NOATIME
@@ -1288,6 +1444,9 @@
 /* Define if the mbrtowc function returns a wrong return value. */
 #undef MBRTOWC_RETVAL_BUG
 
+/* Define to 1 if open() fails to recognize a trailing slash. */
+#undef OPEN_TRAILING_SLASH_BUG
+
 /* Name of package */
 #undef PACKAGE
 
@@ -1308,6 +1467,10 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* Define to the type that is the result of default argument promotions of
+   type mode_t. */
+#undef PROMOTED_MODE_T
 
 /* Define to l, ll, u, ul, ull, etc., as suitable for constants of type
    'ptrdiff_t'. */
@@ -1332,6 +1495,9 @@
    such as on Solaris 9 or cygwin 1.5. */
 #undef RENAME_TRAILING_SLASH_SOURCE_BUG
 
+/* Define to 1 if gnulib's fchdir() replacement is used. */
+#undef REPLACE_FCHDIR
+
 /* Define to 1 if stat needs help when passed a directory name with a trailing
    slash */
 #undef REPLACE_FUNC_STAT_DIR
@@ -1339,6 +1505,10 @@
 /* Define to 1 if stat needs help when passed a file name with a trailing
    slash */
 #undef REPLACE_FUNC_STAT_FILE
+
+/* Define to 1 if open() should work around the inability to open a directory.
+   */
+#undef REPLACE_OPEN_DIRECTORY
 
 /* Define to 1 if strerror(0) does not return a message implying success. */
 #undef REPLACE_STRERROR_0
@@ -1401,6 +1571,10 @@
 /* Enable GNU extensions on systems that have them.  */
 #ifndef _GNU_SOURCE
 # undef _GNU_SOURCE
+#endif
+/* Use GNU style printf and scanf.  */
+#ifndef __USE_MINGW_ANSI_STDIO
+# undef __USE_MINGW_ANSI_STDIO
 #endif
 /* Enable threading extensions on Solaris.  */
 #ifndef _POSIX_PTHREAD_SEMANTICS
