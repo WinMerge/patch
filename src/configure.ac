@@ -21,7 +21,7 @@
 AC_PREREQ(2.57)
 define(AC_PACKAGE_VERSION, m4_normalize(esyscmd(
 [
-    . ./update-version.sh VERSION
+    sh ./update-version.sh VERSION
     cat VERSION
 ])))
 AC_INIT(patch, AC_PACKAGE_VERSION, bug-patch@gnu.org)
@@ -58,6 +58,8 @@ gl_DIRNAME
 gl_ERROR
 gl_EXITFAIL
 gl_FUNC_MEMCHR
+gl_FUNC_STRNDUP
+gl_FUNC_STRNLEN
 gl_GETOPT
 gl_HASH
 gl_PREREQ_XMALLOC

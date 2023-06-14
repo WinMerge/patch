@@ -195,23 +195,22 @@ grow_hunkmax (void)
 }
 
 static bool
-maybe_reverse (char const *name, bool nonexistent, bool empty)
+maybe_reverse (char const *name, bool nonexistent, bool is_empty)
 {
-  bool is_empty = nonexistent || empty;
-  bool r;
+  bool looks_reversed = (! is_empty) < p_says_nonexistent[reverse ^ is_empty];
 
-  r = (! is_empty) < p_says_nonexistent[reverse ^ is_empty]
-      && ok_to_reverse ("The next patch%s would %s the file %s,\nwhich %s!",
-			reverse ? ", when reversed," : "",
-			(nonexistent ? "delete"
-			 : empty ? "empty out"
-			 : "create"),
-			quotearg (name),
-			(nonexistent ? "does not exist"
-			 : empty ? "is already empty"
-			 : "already exists"));
-  reverse ^= r;
-  return r;
+  if (looks_reversed)
+    reverse ^=
+      ok_to_reverse ("The next patch%s would %s the file %s,\nwhich %s!",
+		     reverse ? ", when reversed," : "",
+		     (nonexistent ? "delete"
+		      : is_empty ? "empty out"
+		      : "create"),
+		     quotearg (name),
+		     (nonexistent ? "does not exist"
+		      : is_empty ? "is already empty"
+		      : "already exists"));
+  return looks_reversed;
 }
 
 /* True if the remainder of the patch file contains a diff of some sort. */
@@ -574,7 +573,6 @@ intuit_diff_type (bool need_header)
 	    p_start = previous_line;
 	    p_sline = p_input_line - 1;
 	    p_indent = indent;
-	    p_strip_trailing_cr = strip_trailing_cr;
 	    retval = NORMAL_DIFF;
 	    goto scan_exit;
 	}
@@ -638,6 +636,7 @@ intuit_diff_type (bool need_header)
 
 	if (! posixly_correct)
 	  {
+	    /* The best of all existing files. */
 	    i = best_name (p_name, stat_errno);
 
 	    if (i == NONE && patch_get)
@@ -680,12 +679,10 @@ intuit_diff_type (bool need_header)
 		    }
 	      }
 
-	    if (i != NONE && st[i].st_size > 0)
-	      i0 = i;
 	    if (i0 != NONE
-		&& ! maybe_reverse (p_name[i0], i == NONE,
-				    i == NONE || st[i].st_size == 0))
-	      i = i0;
+	        && maybe_reverse (p_name[i0], i == NONE,
+				  i == NONE || st[i].st_size == 0))
+		i = i0;
 
 	    if (i == NONE && p_says_nonexistent[reverse])
 	      {
@@ -706,6 +703,7 @@ intuit_diff_type (bool need_header)
 		  if (p_name[i])
 		    distance_from_minimum[i] = newdirs[i] - newdirs_min;
 
+		/* The best of the filenames which create the fewest directories. */
 		i = best_name (p_name, distance_from_minimum);
 	      }
 	  }

@@ -1,3 +1,77 @@
+2009-12-30  Andreas Gruenbacher  <agruen@suse.de>
+
+	* patch.man: Clarify the description of the -F / --fuzz option.
+
+	* NEWS: Version 2.6.1 released.
+
+2009-12-29  Andreas Gruenbacher  <agruen@suse.de>
+
+	* src/patch.c (longopts, get_some_switches): Add an optional argument
+	to the --merge option to choose the output formats for conflicts.
+	* patch.man: Document the new optional argument of --merge.
+	* src/merge.c (merge_hunk): Implement diff3-style conflicts.
+	* src/common.h (conflict_style): This global variable determines the
+	output format for conflicts.
+	* tests/merge: Add test cases for the diff3 output format.
+
+	* patch.man: Try to improve the documentation of patch's CRLF handling
+	behavior.
+
+2009-12-28  Andreas Gruenbacher  <agruen@suse.de>
+
+	* tests/create-delete: Clean up a syntactic glitch.
+
+	* src/pch.c: When the input files to diff have CRLF line endings, the
+	'<' and '>' lines of normal-style diffs will have CRLF endings even
+	when the patch itself has not been CRLF mangled.  Do not assume a
+	mangled patch in this case.
+	* tests/crlf-handling: Update test case to cover this case.
+
+	* configure.ac (gl_FUNC_STRNDUP, gl_FUNC_STRNLEN): Add here.
+	* gl/m4/strndup.m4 (gl_HEADER_STRING_H_DEFAULTS): Don't use gnulib's
+	strings.h replacement for now, it is too complicated to add right now.
+	* gl/lib/xstrndup.c: Instead of using gl_HEADER_STRING_H_DEFAULTS,
+	declare strndup here on systems which don't have it.
+	* gl/lib/strndup.c: Instead of using gl_HEADER_STRING_H_DEFAULTS,
+	declare strnlen here on systems which don't have it.
+	* gl/lib/strnlen.c: Import from gnulib.
+
+	* Makefile.in (getopt.h, GETOPT_H): Generate getopt.h in the top-level
+	directory if needed.
+	(stdbool.h, STDBOOL_H): Likewise -- this should fix stdbool.h
+	generation on platforms which don't provide this header.
+	(argmatch.$(OBJEXT)): Add missing $(STDBOOL_H) dependency.
+
+	* install-sh: Make executable.
+
+2009-12-22  Andreas Gruenbacher  <agruen@suse.de>
+
+	* src/version.c (copyright_string): Add year 2009.
+
+	* src/pch.c (intuit_diff_type): Add some clarifying comments.
+
+	* src/pch.c (intuit_diff_type): Fix regression introduced after patch
+	2.5.9: when none of the filenames in the old, new, and index headers
+	exists, patch chose the wrong filename (bug 28367).
+	(maybe_reverse): Return if the patch looks reversed, not if this
+	function toggled the reverse flag.
+	* tests/filename-choice: New test case.
+	* Makefile.in (TESTS): Add test case.
+
+2009-11-24  Bert Wesarg <bert.wesarg@googlemail.com>
+
+	* configure.ac: It looks like the . command does not pass the
+	arguments to the update-version.sh script [on some platforms].  Invoke
+	with sh instead.
+
+2009-11-21  Peter Breitenlohner <peb@mppmu.mpg.de>
+
+	* Makefile.in: Make the test suite work for a VPATH build.
+
+2009-11-14  Andreas Gruenbacher  <agruen@suse.de>
+
+	* update-version.sh: Platform compatibility fixes.
+
 2009-11-12  Andreas Gruenbacher  <agruen@suse.de>
 
 	* NEWS: Version 2.6 released.
