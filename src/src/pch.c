@@ -138,8 +138,11 @@ open_patch_file (char const *filename)
     else
       {
 	size_t charsread;
-	int fd = make_tempfile (&TMPPATNAME, 'p', NULL, O_RDWR | O_BINARY, 0);
+	int fd;
 	FILE *read_pfp = pfp;
+	fd = make_tempfile (&TMPPATNAME, 'p', NULL, O_RDWR | O_BINARY, 0);
+	if (fd == -1)
+	  pfatal ("Can't create temporary file %s", TMPPATNAME);
 	TMPPATNAME_needs_removal = true;
 	pfp = fdopen (fd, "w+b");
 	if (! pfp)
@@ -434,7 +437,7 @@ intuit_diff_type (bool need_header, mode_t *p_file_type)
     int version_controlled[3];
     enum diff retval;
     mode_t file_type;
-    size_t indent = -1;
+    size_t indent = 0;
 
     for (i = OLD;  i <= INDEX;  i++)
       if (p_name[i]) {

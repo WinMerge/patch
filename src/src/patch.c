@@ -115,6 +115,7 @@ main (int argc, char **argv)
     struct stat tmpoutst;
     char numbuf[LINENUM_LENGTH_BOUND + 1];
     bool written_to_rejname = false;
+    bool skip_reject_file = false;
     bool apply_empty_patch = false;
     mode_t file_type;
     int outfd = -1;
@@ -190,6 +191,7 @@ main (int argc, char **argv)
 	there_is_another_patch (! (inname || posixly_correct), &file_type)
 	  || apply_empty_patch;
 	reinitialize_almost_everything(),
+	  skip_reject_file = false,
 	  apply_empty_patch = false
     ) {					/* for each patch in patch file */
       int hunk = 0;
@@ -244,7 +246,7 @@ main (int argc, char **argv)
 	  if (outfile)
 	    outname = outfile;
 	  else if (pch_copy () || pch_rename ())
-	    outname = pch_name (! strcmp (inname, pch_name (OLD)));
+	    outname = pch_name (! reverse);
 	  else
 	    outname = inname;
 	}
@@ -309,7 +311,20 @@ main (int argc, char **argv)
       outfd = make_tempfile (&TMPOUTNAME, 'o', outname,
 			     O_WRONLY | binary_transput,
 			     instat.st_mode & S_IRWXUGO);
-      TMPOUTNAME_needs_removal = true;
+      if (outfd == -1)
+	{
+	  if (errno == ELOOP || errno == EXDEV)
+	    {
+	      say ("Invalid file name %s -- skipping patch\n", quotearg (outname));
+	      skip_rest_of_patch = true;
+	      skip_reject_file = true;
+	      somefailed = true;
+	    }
+	  else
+	    pfatal ("Can't create temporary file %s", TMPOUTNAME);
+	}
+      else
+        TMPOUTNAME_needs_removal = true;
       if (diff_type == ED_DIFF) {
 	outstate.zero_output = false;
 	somefailed |= skip_rest_of_patch;
@@ -351,16 +366,18 @@ main (int argc, char **argv)
 	    if (verbosity != SILENT)
 	      {
 		bool renamed = strcmp (inname, outname);
+		bool skip_rename = ! renamed && pch_rename ();
 
 		say ("%s %s %s%c",
 		     dry_run ? "checking" : "patching",
 		     S_ISLNK (file_type) ? "symbolic link" : "file",
-		     quotearg (outname), renamed ? ' ' : '\n');
-		if (renamed)
-		  say ("(%s from %s)\n",
+		     quotearg (outname), renamed || skip_rename ? ' ' : '\n');
+		if (renamed || skip_rename)
+		  say ("(%s%s from %s)\n",
+		       skip_rename ? "already " : "",
 		       pch_copy () ? "copied" :
 		       (pch_rename () ? "renamed" : "read"),
-		       inname);
+		       ! skip_rename ? inname : pch_name (! strcmp (inname, pch_name (OLD))));
 		if (verbosity == VERBOSE)
 		  say ("Using Plan %s...\n", using_plan_a ? "A" : "B");
 	      }
@@ -450,7 +467,8 @@ main (int argc, char **argv)
 			|| ! where
 			|| ! apply_hunk (&outstate, where))))
 	      {
-		abort_hunk (outname, ! failed, reverse);
+		if (! skip_reject_file)
+		  abort_hunk (outname, ! failed, reverse);
 		failed++;
 		if (verbosity == VERBOSE ||
 		    (! skip_rest_of_patch && verbosity != SILENT))
@@ -591,7 +609,7 @@ main (int argc, char **argv)
       if (diff_type != ED_DIFF) {
 	struct stat rejst;
 
-	if (failed) {
+	if (failed && ! skip_reject_file) {
 	    if (fstat (fileno (rejfp), &rejst) != 0 || fclose (rejfp) != 0)
 	      write_fatal ();
 	    rejfp = NULL;
@@ -1584,6 +1602,8 @@ init_reject (char const *outname)
   int fd;
   fd = make_tempfile (&TMPREJNAME, 'r', outname, O_WRONLY | binary_transput,
 		      0666);
+  if (fd == -1)
+    pfatal ("Can't create temporary file %s", TMPREJNAME);
   TMPREJNAME_needs_removal = true;
   rejfp = fdopen (fd, binary_transput ? "wb" : "w");
   if (! rejfp)

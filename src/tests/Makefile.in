@@ -109,17 +109,21 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/00gnulib.m4 \
 	$(top_srcdir)/m4/double-slash-root.m4 $(top_srcdir)/m4/dup2.m4 \
 	$(top_srcdir)/m4/eealloc.m4 $(top_srcdir)/m4/environ.m4 \
 	$(top_srcdir)/m4/errno_h.m4 $(top_srcdir)/m4/error.m4 \
-	$(top_srcdir)/m4/exponentd.m4 $(top_srcdir)/m4/extensions.m4 \
-	$(top_srcdir)/m4/extern-inline.m4 $(top_srcdir)/m4/fchdir.m4 \
+	$(top_srcdir)/m4/euidaccess.m4 $(top_srcdir)/m4/exponentd.m4 \
+	$(top_srcdir)/m4/extensions.m4 \
+	$(top_srcdir)/m4/extern-inline.m4 \
+	$(top_srcdir)/m4/faccessat.m4 $(top_srcdir)/m4/fchdir.m4 \
 	$(top_srcdir)/m4/fchmodat.m4 $(top_srcdir)/m4/fchownat.m4 \
 	$(top_srcdir)/m4/fcntl-o.m4 $(top_srcdir)/m4/fcntl.m4 \
 	$(top_srcdir)/m4/fcntl_h.m4 $(top_srcdir)/m4/filenamecat.m4 \
 	$(top_srcdir)/m4/float_h.m4 $(top_srcdir)/m4/fstat.m4 \
 	$(top_srcdir)/m4/fstatat.m4 $(top_srcdir)/m4/getcwd.m4 \
-	$(top_srcdir)/m4/getdtablesize.m4 $(top_srcdir)/m4/getopt.m4 \
+	$(top_srcdir)/m4/getdtablesize.m4 \
+	$(top_srcdir)/m4/getgroups.m4 $(top_srcdir)/m4/getopt.m4 \
 	$(top_srcdir)/m4/gettime.m4 $(top_srcdir)/m4/gettimeofday.m4 \
 	$(top_srcdir)/m4/glibc21.m4 $(top_srcdir)/m4/gnulib-common.m4 \
 	$(top_srcdir)/m4/gnulib-comp.m4 \
+	$(top_srcdir)/m4/group-member.m4 \
 	$(top_srcdir)/m4/include_next.m4 $(top_srcdir)/m4/intmax_t.m4 \
 	$(top_srcdir)/m4/inttypes_h.m4 $(top_srcdir)/m4/largefile.m4 \
 	$(top_srcdir)/m4/lchown.m4 $(top_srcdir)/m4/localcharset.m4 \
@@ -927,6 +931,7 @@ LIBPATCH_LIBDEPS = @LIBPATCH_LIBDEPS@
 LIBPATCH_LTLIBDEPS = @LIBPATCH_LTLIBDEPS@
 LIBS = @LIBS@
 LIB_CLOCK_GETTIME = @LIB_CLOCK_GETTIME@
+LIB_EACCESS = @LIB_EACCESS@
 LIB_XATTR = @LIB_XATTR@
 LOCALCHARSET_TESTS_ENVIRONMENT = @LOCALCHARSET_TESTS_ENVIRONMENT@
 LOCALE_FR_UTF8 = @LOCALE_FR_UTF8@

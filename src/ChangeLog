@@ -1,3 +1,186 @@
+2015-03-07  Andreas Gruenbacher  <agruen@gnu.org>
+
+	Version 2.7.5
+	* NEWS: Update.
+
+	build: update gnulib submodule to latest
+
+	Allow absolute symlinks that lead back into the working directory
+	* src/safe.c (cwd_stat_errno, cwd_stat): stat() result of ".".
+	(read_symlink): When a symlink is absolute, check if it leads back into the
+	working directory.  If it does, strip off the prefix above the working
+	directory. If the symlink points to the working directory, return an empty
+	path.
+	(traverse_another_path): Recognize empty paths from read_symlink().
+	* tests/symlinks: Absolute symlink test cases.
+
+2015-03-05  Andreas Gruenbacher  <agruen@gnu.org>
+
+	Describe better how the dirfd cache works
+
+	Use overflow safe arithmetic for counting cache misses
+	* src/safe.c: We don't need a long counter if we use overflow-safe arithmetic
+	here.
+
+	Also cache resolved symlinks
+	When resolving a symlink in a pathname, we traverse each path component in the
+	symlink and cache all of them.  At the end, add an additional cache entry for
+	the symlink itself so that we don't have to resolve the symlink again (even
+	though this will usually be cached).  Skip that if the symlink's parent isn't
+	in the cache anymore, though.
+	* src/safe.c (free_cached_dirfd): Remove from parent here instead of in
+	callers. Move close() to remove_cached_dirfd() instead.
+	(insert_cached_dirfd): Only insert if the entry's parent still exists; entries
+	without parent are invalid (see compare_cached_dirfds()); "top-level" entries
+	have cwd as their parent.
+	(new_cached_dirfd): New function split off from openat_cached().
+	(openat_cached): Use new_cached_dirfd() here.
+	(traverse_another_path): When starting to resolve a symlink, create an unhashed
+	dirfd cache entry for the symlink lookup result. When the symlink is completely
+	resolved, add that entry to the cache.
+
+	Invalidate child dirfd cache entries when their parent goes away
+	If we don't do that, a directory could be removed from the cache, a new
+	directory with the same dirfd could be created, and the entries from the old
+	directory would appear in the new directory.
+	* src/safe.c (struct cached_dirfd): Keep track of the children of each dirfd
+	cache entry.
+	(remove_cached_dirfd): Remove all the entry's children from the lookup hash,
+	take them off the list of children, and initialize the children's
+	children_link.  Then, remove the entry itself from its parent. This has no
+	effect if the entry doesn't have a parent because then, children_link is empty.
+	(openat_cached): Add new dirfd cache entries to their parent's list of children
+	and initialize the entry's list of children.
+	(traverse_another_path): Also initialize cwd's list of children.
+
+	Convert lru list into a list_head list
+	* src/safe.c (struct cached_dirfd): Replace prev and next with a lru_link
+	list_head.
+	(lru_list): Turn into a list_head.
+	(lru_list_add, lru_list_del, lru_list_del_init): Replace by list_add(),
+	list_del(), list_del_init().
+	(insert_cached_dirfd): Get to the list entry from the embedded list_head with
+	the list_entry() macro.
+
+	Add list_head based double linked list
+	* src/list.h: New data structure.
+	src/Makefile.am (patch_SOURCES): Add list.h.
+
+	Invalidate dirfd less aggressively
+	src/safe.c (safe_rename, safe_rmdir): Only invalidate cache entries when the
+	underlying sycall succeeds and the entry actually goes away.  This keeps the
+	cache filled upon speculative rmdir when the directory may not be empty, for
+	example.
+
+2015-03-05  Tim Waugh  <twaugh@redhat.com>
+
+	Add more path traversal test cases
+	* tests/symlinks: Add more path traversal test cases.
+
+2015-03-05  Andreas Gruenbacher  <agruen@gnu.org>
+
+	Move path traversal error reporting into main()
+	* src/safe.c (traverse_another_path): Don't report errors here.
+	* src/patch.c (main): Instead, recognize and report them here. Detect when an
+	output file name is invalid; it doesn't make sense to try creating a
+	reject file based on the same outbut file name in that case.
+
+	Limit the number of path components
+	src/safe.c (MAX_PATH_COMPONENTS): The maximum number of path components
+	allowed.
+	(count_path_components): New function.
+	(traverse_another_path): Fail if the number of path components gets too high.
+
+	Follow directory symlinks within the working directory
+	* src/safe.c (struct symlink): A symlink to resolve.
+	(push_symlink, pop_symlink): New functions.
+	(read_symlink): Create a new symlink stack entry.
+	(traverse_next): Follow ".." components within the working directory. When
+	hitting symlinks, "follow" them by reading and returning them.
+	(traverse_another_path): Recursively traverse symlinks.
+
+	Keep track of the directory hierarchy
+	* src/safe.c (struct cached_dirfd): Add parent pointer. Now that we know our
+	parent, we no longer need to duplicate its directory file descriptor.
+	(lookup_cached_dirfd): Don't update the lru list here.
+	(insert_cached_dirfd): The lru list may now be empty even if the cache is not.
+	(put_path): New function to put a path back into the lru list.
+	(openat_cached): Take cached entried off the lru list.  They are added back
+	in put_path().
+	(traverse_another_path): Put lookup result back into the lru list with
+	put_path().
+
+2015-02-28  Andreas Gruenbacher  <agruen@gnu.org>
+
+	Refactor traverse_another_path() and helpers
+	Prepare for keeping track of the directory hierarchy:
+	* src/safe.c (traverse_another_path): Pass struct cached_dirfd to
+	traverse_next().
+	(traverse_next, openat_cached): Pass through struct cached_dirfd.
+
+	Move error reporting out of make_tempfile()
+	* src/util.c (make_tempfile): Remove error reporting here.
+	* src/inp.c (plan_b): Readd error reporting here.
+	* src/patch.c (main): Likewise.
+	* src/pch.c (open_patch_file): Likewise.
+
+	Minor cosmetic changes
+	* src/safe.c: Minor cosmetic changes
+
+2015-02-22  Andreas Gruenbacher  <agruen@gnu.org>
+
+	Fix handling of renamed files
+	When a file has already been renamed, make sure it is not renamed back to its
+	old name.  Reported by Guido Draheim.
+	* src/patch.c (main): Make sure we never rename a file back to its previous
+	name. Report when a file was renamed already.
+	* tests/copy-rename: Add "already renamed" test cases.
+
+2015-02-10  Andreas Gruenbacher  <agruen@gnu.org>
+
+	Fix symlinks test case on some architectures
+	* src/safe.c: Include util.h for say(). Define EFTYPE if it isn't defined
+	already.
+	(traverse_another_path): When openat fails, also check for EMLINK, EFTYPE, and
+	ENOTDIR. Change the error message to "file ... is not a directory" and only
+	skip the rest of the patch instead of aborting.
+	* tests/symlinks: Update.
+
+2015-02-04  Andreas Gruenbacher  <agruen@gnu.org>
+
+	Test suite portability fixes
+	Reported and fixed (mostly) by Christian Weisgerber <naddy@mips.inka.de>:
+	* tests/deep-directories: Avoid the bash >& redirection operator.
+	* tests/no-mode-change-git-diff: Instead of "stat -c", use "ls -l  sed".
+	* tests/read-only-files: A redirection failure for a special built-in causes
+	some shells (FreeBSD sh, OpenBSD sh (pdksh), some bash --posix) to exit, and
+	the colon command is a special built-in. Perform the redirection in a subshell.
+
+	Switch from gen_tempname() to try_tempname()
+	* Update gnulib submodule to latest.
+	* src/util.c (try_safe_open_args, try_safe_open): Arguments and callback for
+	try_tempname().
+	(make_tempfile): Switch from gen_tempname() to try_tempname().
+
+2015-02-02  Andreas Gruenbacher  <agruen@gnu.org>
+
+	Check the result of the --follow-symlinks option
+	* tests/symlinks: Check the result of treating a symlink as a file with
+	--follow-symlinks.
+
+2015-02-01  Andreas Gruenbacher  <agruen@gnu.org>
+
+	Link patch with LIB_EACCESS where needed
+	* src/Makefile.am (patch_LDADD): Add LIB_EACCESS here. At least on Solaris,
+	faccessat() is implemented through eaccess() which is in the "gen" library.
+
+	Fix minor signedness warning
+	* src/pch.c (intuit_diff_type): Don't assign signed dummy value to unsigned
+	variable.
+
+	Use gnulib faccessat module
+	* bootstrap.conf (gnulib_modules): Add faccessat.
+
 2015-01-31  Andreas Gruenbacher  <agruen@gnu.org>
 
 	Upate NEWS

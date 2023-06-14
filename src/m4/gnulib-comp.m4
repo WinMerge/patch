@@ -70,10 +70,12 @@ AC_DEFUN([gl_EARLY],
   # Code from module environ:
   # Code from module errno:
   # Code from module error:
+  # Code from module euidaccess:
   # Code from module exitfail:
   # Code from module extensions:
   AC_REQUIRE([gl_USE_SYSTEM_EXTENSIONS])
   # Code from module extern-inline:
+  # Code from module faccessat:
   # Code from module fchdir:
   # Code from module fchmodat:
   # Code from module fchownat:
@@ -89,6 +91,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module getcwd-lgpl:
   # Code from module getdate:
   # Code from module getdtablesize:
+  # Code from module getgroups:
   # Code from module getopt-gnu:
   # Code from module getopt-posix:
   # Code from module gettext-h:
@@ -97,6 +100,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module git-version-gen:
   # Code from module gitlog-to-changelog:
   # Code from module gnumakefile:
+  # Code from module group-member:
   # Code from module hash:
   # Code from module ignore-value:
   # Code from module include_next:
@@ -148,6 +152,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module rename:
   # Code from module renameat:
   # Code from module rmdir:
+  # Code from module root-uid:
   # Code from module safe-write:
   # Code from module same-inode:
   # Code from module save-cwd:
@@ -303,7 +308,20 @@ AC_DEFUN([gl_INIT],
   m4_ifdef([AM_XGETTEXT_OPTION],
     [AM_][XGETTEXT_OPTION([--flag=error:3:c-format])
      AM_][XGETTEXT_OPTION([--flag=error_at_line:5:c-format])])
+  gl_FUNC_EUIDACCESS
+  if test $HAVE_EUIDACCESS = 0; then
+    AC_LIBOBJ([euidaccess])
+    gl_PREREQ_EUIDACCESS
+  fi
+  gl_UNISTD_MODULE_INDICATOR([euidaccess])
   AC_REQUIRE([gl_EXTERN_INLINE])
+  gl_FUNC_FACCESSAT
+  if test $HAVE_FACCESSAT = 0; then
+    AC_LIBOBJ([faccessat])
+    gl_PREREQ_FACCESSAT
+  fi
+  gl_MODULE_INDICATOR([faccessat])
+  gl_UNISTD_MODULE_INDICATOR([faccessat])
   gl_FUNC_FCHDIR
   gl_UNISTD_MODULE_INDICATOR([fchdir])
   gl_FUNC_FCHMODAT
@@ -354,6 +372,11 @@ AC_DEFUN([gl_INIT],
     gl_PREREQ_GETDTABLESIZE
   fi
   gl_UNISTD_MODULE_INDICATOR([getdtablesize])
+  gl_FUNC_GETGROUPS
+  if test $HAVE_GETGROUPS = 0 || test $REPLACE_GETGROUPS = 1; then
+    AC_LIBOBJ([getgroups])
+  fi
+  gl_UNISTD_MODULE_INDICATOR([getgroups])
   gl_FUNC_GETOPT_GNU
   if test $REPLACE_GETOPT = 1; then
     AC_LIBOBJ([getopt])
@@ -392,6 +415,12 @@ AC_DEFUN([gl_INIT],
           m4_defn([m4_PACKAGE_VERSION])), [1], [],
         [AC_CONFIG_LINKS([$GNUmakefile:$GNUmakefile], [],
           [GNUmakefile=$GNUmakefile])])
+  gl_FUNC_GROUP_MEMBER
+  if test $HAVE_GROUP_MEMBER = 0; then
+    AC_LIBOBJ([group-member])
+    gl_PREREQ_GROUP_MEMBER
+  fi
+  gl_UNISTD_MODULE_INDICATOR([group-member])
   AC_REQUIRE([gl_LARGEFILE])
   gl_FUNC_LCHOWN
   if test $HAVE_LCHOWN = 0 || test $REPLACE_LCHOWN = 1; then
@@ -882,8 +911,10 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/errno.in.h
   lib/error.c
   lib/error.h
+  lib/euidaccess.c
   lib/exitfail.c
   lib/exitfail.h
+  lib/faccessat.c
   lib/fchdir.c
   lib/fchmodat.c
   lib/fchown-stub.c
@@ -906,6 +937,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/getcwd-lgpl.c
   lib/getdate.h
   lib/getdtablesize.c
+  lib/getgroups.c
   lib/getopt.c
   lib/getopt.in.h
   lib/getopt1.c
@@ -921,6 +953,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/gl_list.h
   lib/gl_xlist.c
   lib/gl_xlist.h
+  lib/group-member.c
   lib/hash.c
   lib/hash.h
   lib/ignore-value.h
@@ -980,6 +1013,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/rename.c
   lib/renameat.c
   lib/rmdir.c
+  lib/root-uid.h
   lib/safe-read.c
   lib/safe-write.c
   lib/safe-write.h
@@ -1077,9 +1111,11 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/environ.m4
   m4/errno_h.m4
   m4/error.m4
+  m4/euidaccess.m4
   m4/exponentd.m4
   m4/extensions.m4
   m4/extern-inline.m4
+  m4/faccessat.m4
   m4/fchdir.m4
   m4/fchmodat.m4
   m4/fchownat.m4
@@ -1092,11 +1128,13 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/fstatat.m4
   m4/getcwd.m4
   m4/getdtablesize.m4
+  m4/getgroups.m4
   m4/getopt.m4
   m4/gettime.m4
   m4/gettimeofday.m4
   m4/glibc21.m4
   m4/gnulib-common.m4
+  m4/group-member.m4
   m4/include_next.m4
   m4/intmax_t.m4
   m4/inttypes_h.m4
