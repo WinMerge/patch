@@ -1,5 +1,5 @@
 # DO NOT EDIT! GENERATED AUTOMATICALLY!
-# Copyright (C) 2002-2012 Free Software Foundation, Inc.
+# Copyright (C) 2002-2014 Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ AC_DEFUN([gl_EARLY],
   m4_pattern_allow([^gl_LIBOBJS$])dnl a variable
   m4_pattern_allow([^gl_LTLIBOBJS$])dnl a variable
   AC_REQUIRE([gl_PROG_AR_RANLIB])
+  # Code from module absolute-header:
   # Code from module alloca-opt:
   # Code from module argmatch:
   # Code from module backupfile:
@@ -88,7 +89,6 @@ AC_DEFUN([gl_EARLY],
   # Code from module hash:
   # Code from module ignore-value:
   # Code from module include_next:
-  # Code from module inline:
   # Code from module intprops:
   # Code from module largefile:
   AC_REQUIRE([AC_SYS_LARGEFILE])
@@ -130,6 +130,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module rmdir:
   # Code from module safe-write:
   # Code from module same-inode:
+  # Code from module secure_getenv:
   # Code from module setenv:
   # Code from module signal:
   # Code from module signal-h:
@@ -186,6 +187,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module xalloc-die:
   # Code from module xalloc-oversized:
   # Code from module xlist:
+  # Code from module xmemdup0:
   # Code from module xsize:
   # Code from module xstrndup:
   # Code from module xvasprintf:
@@ -209,7 +211,6 @@ AC_DEFUN([gl_INIT],
   gl_source_base='lib'
   gl_FUNC_ALLOCA
   gl_BACKUPFILE
-  AC_REQUIRE([AC_C_INLINE])
   gl_CANONICALIZE_LGPL
   if test $HAVE_CANONICALIZE_FILE_NAME = 0 || test $REPLACE_CANONICALIZE_FILE_NAME = 1; then
     AC_LIBOBJ([canonicalize-lgpl])
@@ -282,7 +283,7 @@ AC_DEFUN([gl_INIT],
   fi
   gl_SYS_STAT_MODULE_INDICATOR([fstat])
   gl_FUNC_GETDTABLESIZE
-  if test $HAVE_GETDTABLESIZE = 0; then
+  if test $HAVE_GETDTABLESIZE = 0 || test $REPLACE_GETDTABLESIZE = 1; then
     AC_LIBOBJ([getdtablesize])
     gl_PREREQ_GETDTABLESIZE
   fi
@@ -325,11 +326,9 @@ AC_DEFUN([gl_INIT],
           m4_defn([m4_PACKAGE_VERSION])), [1], [],
         [AC_CONFIG_LINKS([$GNUmakefile:$GNUmakefile], [],
           [GNUmakefile=$GNUmakefile])])
-  gl_INLINE
   AC_REQUIRE([gl_LARGEFILE])
   gl_FUNC_LCHMOD
   gl_SYS_STAT_MODULE_INDICATOR([lchmod])
-  gl_LIST
   gl_LOCALCHARSET
   LOCALCHARSET_TESTS_ENVIRONMENT="CHARSETALIASDIR=\"\$(abs_top_builddir)/$gl_source_base\""
   AC_SUBST([LOCALCHARSET_TESTS_ENVIRONMENT])
@@ -341,6 +340,7 @@ AC_DEFUN([gl_INIT],
   gl_SYS_STAT_MODULE_INDICATOR([lstat])
   AC_CONFIG_COMMANDS_PRE([m4_ifdef([AH_HEADER],
     [AC_SUBST([CONFIG_INCLUDE], m4_defn([AH_HEADER]))])])
+  AC_REQUIRE([AC_PROG_SED])
   gl_FUNC_MALLOC_GNU
   if test $REPLACE_MALLOC = 1; then
     AC_LIBOBJ([malloc])
@@ -439,6 +439,12 @@ AC_DEFUN([gl_INIT],
   fi
   gl_UNISTD_MODULE_INDICATOR([rmdir])
   gl_PREREQ_SAFE_WRITE
+  gl_FUNC_SECURE_GETENV
+  if test $HAVE_SECURE_GETENV = 0; then
+    AC_LIBOBJ([secure_getenv])
+    gl_PREREQ_SECURE_GETENV
+  fi
+  gl_STDLIB_MODULE_INDICATOR([secure_getenv])
   gl_FUNC_SETENV
   if test $HAVE_SETENV = 0 || test $REPLACE_SETENV = 1; then
     AC_LIBOBJ([setenv])
@@ -537,7 +543,7 @@ AC_DEFUN([gl_INIT],
   fi
   gl_UNISTD_MODULE_INDICATOR([write])
   gl_XALLOC
-  gl_LIST
+  AC_LIBOBJ([xmemdup0])
   gl_XSIZE
   gl_XSTRNDUP
   gl_XVASPRINTF
@@ -703,6 +709,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/backupfile.h
   lib/basename-lgpl.c
   lib/basename.c
+  lib/bitrotate.c
   lib/bitrotate.h
   lib/c-ctype.c
   lib/c-ctype.h
@@ -811,6 +818,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/safe-write.c
   lib/safe-write.h
   lib/same-inode.h
+  lib/secure_getenv.c
   lib/setenv.c
   lib/signal.in.h
   lib/size_max.h
@@ -843,6 +851,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/timespec.h
   lib/unistd--.h
   lib/unistd-safer.h
+  lib/unistd.c
   lib/unistd.in.h
   lib/unlink.c
   lib/unsetenv.c
@@ -855,6 +864,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/verror.c
   lib/verror.h
   lib/wchar.in.h
+  lib/wctype-h.c
   lib/wctype.in.h
   lib/write.c
   lib/xalloc-die.c
@@ -862,6 +872,8 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/xalloc.h
   lib/xasprintf.c
   lib/xmalloc.c
+  lib/xmemdup0.c
+  lib/xmemdup0.h
   lib/xsize.c
   lib/xsize.h
   lib/xstrndup.c
@@ -869,6 +881,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/xvasprintf.c
   lib/xvasprintf.h
   m4/00gnulib.m4
+  m4/absolute-header.m4
   m4/alloca.m4
   m4/backupfile.m4
   m4/bison.m4
@@ -901,11 +914,9 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/getopt.m4
   m4/gettime.m4
   m4/gettimeofday.m4
-  m4/gl_list.m4
   m4/glibc21.m4
   m4/gnulib-common.m4
   m4/include_next.m4
-  m4/inline.m4
   m4/intmax_t.m4
   m4/inttypes_h.m4
   m4/largefile.m4
@@ -947,6 +958,7 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/rmdir.m4
   m4/safe-read.m4
   m4/safe-write.m4
+  m4/secure_getenv.m4
   m4/setenv.m4
   m4/signal_h.m4
   m4/size_max.m4

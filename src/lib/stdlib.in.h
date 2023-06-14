@@ -1,6 +1,6 @@
 /* A GNU-like <stdlib.h>.
 
-   Copyright (C) 1995, 2001-2004, 2006-2012 Free Software Foundation, Inc.
+   Copyright (C) 1995, 2001-2004, 2006-2014 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,8 +20,9 @@
 #endif
 @PRAGMA_COLUMNS@
 
-#if defined __need_malloc_and_calloc
-/* Special invocation convention inside glibc header files.  */
+#if defined __need_system_stdlib_h || defined __need_malloc_and_calloc
+/* Special invocation conventions inside some gnulib header files,
+   and inside some glibc header files, respectively.  */
 
 #@INCLUDE_NEXT@ @NEXT_STDLIB_H@
 
@@ -457,10 +458,19 @@ _GL_WARN_ON_USE (posix_openpt, "posix_openpt is not portable - "
 #if @GNULIB_PTSNAME@
 /* Return the pathname of the pseudo-terminal slave associated with
    the master FD is open on, or NULL on errors.  */
-# if !@HAVE_PTSNAME@
+# if @REPLACE_PTSNAME@
+#  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
+#   undef ptsname
+#   define ptsname rpl_ptsname
+#  endif
+_GL_FUNCDECL_RPL (ptsname, char *, (int fd));
+_GL_CXXALIAS_RPL (ptsname, char *, (int fd));
+# else
+#  if !@HAVE_PTSNAME@
 _GL_FUNCDECL_SYS (ptsname, char *, (int fd));
-# endif
+#  endif
 _GL_CXXALIAS_SYS (ptsname, char *, (int fd));
+# endif
 _GL_CXXALIASWARN (ptsname);
 #elif defined GNULIB_POSIXCHECK
 # undef ptsname
@@ -508,6 +518,29 @@ _GL_CXXALIAS_RPL (putenv, int, (char *string));
 _GL_CXXALIAS_SYS (putenv, int, (char *string));
 # endif
 _GL_CXXALIASWARN (putenv);
+#endif
+
+#if @GNULIB_QSORT_R@
+# if @REPLACE_QSORT_R@
+#  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
+#   undef qsort_r
+#   define qsort_r rpl_qsort_r
+#  endif
+_GL_FUNCDECL_RPL (qsort_r, void, (void *base, size_t nmemb, size_t size,
+                                  int (*compare) (void const *, void const *,
+                                                  void *),
+                                  void *arg) _GL_ARG_NONNULL ((1, 4)));
+_GL_CXXALIAS_RPL (qsort_r, void, (void *base, size_t nmemb, size_t size,
+                                  int (*compare) (void const *, void const *,
+                                                  void *),
+                                  void *arg));
+# else
+_GL_CXXALIAS_SYS (qsort_r, void, (void *base, size_t nmemb, size_t size,
+                                  int (*compare) (void const *, void const *,
+                                                  void *),
+                                  void *arg));
+# endif
+_GL_CXXALIASWARN (qsort_r);
 #endif
 
 
@@ -754,6 +787,22 @@ _GL_CXXALIASWARN (rpmatch);
 # if HAVE_RAW_DECL_RPMATCH
 _GL_WARN_ON_USE (rpmatch, "rpmatch is unportable - "
                  "use gnulib module rpmatch for portability");
+# endif
+#endif
+
+#if @GNULIB_SECURE_GETENV@
+/* Look up NAME in the environment, returning 0 in insecure situations.  */
+# if !@HAVE_SECURE_GETENV@
+_GL_FUNCDECL_SYS (secure_getenv, char *,
+                  (char const *name) _GL_ARG_NONNULL ((1)));
+# endif
+_GL_CXXALIAS_SYS (secure_getenv, char *, (char const *name));
+_GL_CXXALIASWARN (secure_getenv);
+#elif defined GNULIB_POSIXCHECK
+# undef secure_getenv
+# if HAVE_RAW_DECL_SECURE_GETENV
+_GL_WARN_ON_USE (secure_getenv, "secure_getenv is unportable - "
+                 "use gnulib module secure_getenv for portability");
 # endif
 #endif
 

@@ -27,6 +27,7 @@
 #define XTERN
 #include <util.h>
 #include <xalloc.h>
+#include <xmemdup0.h>
 
 #include <getdate.h>
 #include "ignore-value.h"
@@ -422,6 +423,60 @@ create_backup (char const *to, const struct stat *to_st, bool leave_original)
     }
 }
 
+static bool
+symlink_target_is_valid (char const *target, char const *to)
+{
+  bool is_valid;
+
+  if (IS_ABSOLUTE_FILE_NAME (to))
+    is_valid = true;
+  else if (IS_ABSOLUTE_FILE_NAME (target))
+    is_valid = false;
+  else
+    {
+      unsigned int depth = 0;
+      char const *t;
+
+      is_valid = true;
+      t = to;
+      while (*t)
+	{
+	  while (*t && ! ISSLASH (*t))
+	    t++;
+	  if (ISSLASH (*t))
+	    {
+	      while (ISSLASH (*t))
+		t++;
+	      depth++;
+	    }
+	}
+
+      t = target;
+      while (*t)
+	{
+	  if (*t == '.' && *++t == '.' && (! *++t || ISSLASH (*t)))
+	    {
+	      if (! depth--)
+		{
+		  is_valid = false;
+		  break;
+		}
+	    }
+	  else
+	    {
+	      while (*t && ! ISSLASH (*t))
+		t++;
+	      depth++;
+	    }
+	  while (ISSLASH (*t))
+	    t++;
+	}
+    }
+
+  /* Allow any symlink target if we are in the filesystem root.  */
+  return is_valid || cwd_is_root (to);
+}
+
 /* Move a file FROM (where *FROM_NEEDS_REMOVAL is nonzero if FROM
    needs removal when cleaning up at the end of execution, and where
    *FROMST is FROM's status if known),
@@ -464,6 +519,13 @@ move_file (char const *from, bool *from_needs_removal,
 	  if (i != 0 || close (fd) != 0)
 	    read_fatal ();
 	  buffer[size] = 0;
+
+	  if (! symlink_target_is_valid (buffer, to))
+	    {
+	      fprintf (stderr, "symbolic link target '%s' is invalid\n",
+		       buffer);
+	      fatal_exit (0);
+	    }
 
 	  if (! backup)
 	    {
@@ -1476,8 +1538,7 @@ fetchname (char const *at, int strip_leading, char **pname,
 		break;
 	      }
 	  }
-	name = savebuf (at, t - at + 1);
-	name[t - at] = 0;
+	name = xmemdup0 (at, t - at);
       }
 
     /* If the name is "/dev/null", ignore the name and mark the file
@@ -1509,8 +1570,7 @@ fetchname (char const *at, int strip_leading, char **pname,
 	  u--;
 	if (u != t && *(u-1) == '\r')
 	  u--;
-	timestr = savebuf (t, u - t + 1);
-	timestr[u - t] = 0;
+	timestr = xmemdup0 (t, u - t);
       }
 
       if (*t != '\n')
@@ -1568,8 +1628,7 @@ parse_name (char const *s, int strip_leading, char const **endp)
 
       for (t = s; *t && ! ISSPACE ((unsigned char) *t); t++)
 	/* do nothing*/ ;
-      ret = savebuf (s, t - s + 1);
-      ret[t - s] = 0;
+      ret = xmemdup0 (s, t - s);
       if (endp)
 	*endp = t;
     }
@@ -1599,7 +1658,7 @@ make_tempfile (char const **name, char letter, char const *real_name,
   int try_makedirs_errno = ENOENT;
   char *template;
 
-  if (real_name)
+  if (real_name && ! dry_run)
     {
       char *dirname, *basename;
 
@@ -1659,4 +1718,27 @@ int stat_file (char const *filename, struct stat *st)
     follow_symlinks ? stat : lstat;
 
   return xstat (filename, st) == 0 ? 0 : errno;
+}
+
+/* Check if we are in the root of a particular filesystem namespace ("/" on
+   UNIX or a particular drive's root on DOS-like systems).  */
+bool
+cwd_is_root (char const *name)
+{
+  unsigned int prefix_len = FILE_SYSTEM_PREFIX_LEN (name);
+  char root[prefix_len + 2];
+  struct stat st;
+  dev_t root_dev;
+  ino_t root_ino;
+
+  memcpy (root, name, prefix_len);
+  root[prefix_len] = '/';
+  root[prefix_len + 1] = 0;
+  if (stat (root, &st))
+    return false;
+  root_dev = st.st_dev;
+  root_ino = st.st_ino;
+  if (stat (".", &st))
+    return false;
+  return root_dev == st.st_dev && root_ino == st.st_ino;
 }

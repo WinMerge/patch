@@ -1,3 +1,200 @@
+2015-01-20  Andreas Gruenbacher  <agruen@gnu.org>
+
+	Fail when out of memory in set_hunkmax()
+	src/pch.c (another_hunk): Call set_hunkmax() from here to make sure it is
+	called even when falling back from plan A to plan B.
+	(open_patch_file): No need to call set_hunkmax() anymore.
+	src/pch.c (set_hunkmax): Fail when out of memory. Make static.
+	src/pch.h: Remove set_hunkmax() prototype.
+
+	Don't try applying hunks at offsets that can't work
+	* src/patch.c (locate_hunk): Start trying to apply the hunk at the minimum
+	offset which puts the hunk in the valid range of lines. This will often still
+	be offset 0.
+
+2015-01-20  Andreas Gruenbacher  <andreas.gruenbacher@gmail.com>
+
+	Move symlink_target_is_valid() and cwd_is_root()
+	* src/util.c: Move symlink_target_is_valid() and cwd_is_root() here from
+	src/pch.c.
+
+2015-01-19  Andreas Gruenbacher  <andreas.gruenbacher@gmail.com>
+
+	Make sure symlinks don't point outside working directory (CVE-2015-119)
+	When creating symlinks from git-style patches, make sure the symlinks don't
+	point above the current working directory.  Otherwise, a subsequent patch could
+	use the symlink to write outside the working directory.
+
+	* src/pch.c (symlink_target_is_valid): New function to check for valid symlink
+	targets.
+	* src/util.c (move_file): Use symlink_target_is_valid() here.
+	* tests/symlinks: Add valid and invalid symlink test cases.
+
+2014-11-30  Andreas Gruenbacher  <agruen@linbit.com>
+
+	Add line number overflow checking
+	* bootstrap.conf: use intprops module.
+	* src/common.h: Define LINENUM_MIN and LINENUM_MAX macros.
+	* src/pch.c (another_hunk): Add line number overflow checking.  Based on Robert
+	C. Seacord's INT32-C document for integer overflow checking and Tobias
+	Stoeckmann's "integer overflows and oob memory access" patch for FreeBSD.
+
+2014-11-30  Andreas Gruenbacher  <agruen@linbit.com>
+
+	More savebuf/savestr error handling
+	* bootstrap.conf: use xmemdup0 module.
+	* src/pch.c (there_is_another_patch): Use xmemdup0 instead of savebuf when we
+	cannot recover from out-of-memory situations.
+	(intuit_diff_type): Likewise, use xstrdup instead of savestr.
+	(another_hunk): Handle the case when savestr returns NULL.
+	* src/util.c (fetchname, parse_name): Use xmemdup0 instead of savebuf when we
+	cannot recover from out-of-memory situations.
+
+	Bugs pointed out by Tobias Stoeckmann <tobias@stoeckmann.org>.
+
+2014-11-30  Tobias Stoeckmann  <tobias@stoeckmann.org>
+
+	savebuf/savestr error handling
+	* src/patch.c (get_some_switches): The function savebuf (and therefore savestr)
+	copies strings using malloc.  If malloc fails, NULL is returned.  This is
+	intentional behavior so that in case of failure during "plan a" patching, "plan
+	b" can step in.  The return value has to be properly checked for NULL.  If the
+	return value must not be NULL, use xstrdup instead.
+
+2014-11-30  Andreas Gruenbacher  <andreas.gruenbacher@gmail.com>
+
+	build: update gnulib submodule to latest
+	* src/merge.c (compute_changes): The TOO_EXPENSIVE heuristic in diffseq has
+	been removed, including compareseq's find_minimal parameter and the context's
+	too_expensive limit.  Adjust.
+
+2014-11-10  Jean Delvare  <jdelvare@suse.de>
+
+	Drop useless test in another_hunk()
+	src/pch.c (another_hunk): This test will always succeed.
+
+2014-10-30  Tobias Stoeckmann  <tobias@stoeckmann.org>
+
+	Buffer overflow on malicious input file
+	There is a hard to reach but possible buffer overflow when using
+	patch with a very large (modified) input file.  I doubt you will ever
+	see this with a 64 bit system, but it's possible with 32 bit:
+
+	$ echo hello > file1
+	$ echo world > file2
+	$ diff -Nau file1 file2 > file.diff
+
+	Nothing fancy so far.  Adjust file1 so it contains at least one line that
+	is 2 GB in size.  Larger is fine too, but stay below 4 GB.
+
+	$ tr '\0' c < /dev/zero | dd bs=1K count=2097152 of=file1
+
+	Now try to patch it.
+
+	$ patch -Np0 -i file.diff
+	Segmentation fault
+
+	The issue is in patch's "plan b" strategy  (If your system would still
+	want to use "plan a", force patch to use "plan b" through debug flag).
+
+	Plan b writes lines into a temporary file, with equally long lines, so
+	it can use a buffer mechanism to access them in a kind of randomly
+	fassion.  In order to do that, it retrieves the longest line.
+
+	In this example, it will encounter the 2 GB line and stores that as the
+	longest one.  Afterwards it will adjust the tibufsize variable to be
+	large enough:
+
+	  for (tibufsize = TIBUFSIZE_MINIMUM;  tibufsize < maxlen;  tibufsize <<= 1)
+	    /* do nothing */ ;
+
+	Due to maxlen's size (2 GB), tibufsize will be SIZE_T_MAX, i.e. 4 GB.
+	A few lines later it allocates space for the tibuf buffers:
+
+	  tibuf[0] = xmalloc (2 * tibufsize);
+	  tibuf[1] = tibuf[0] + tibufsize;
+
+	This will allocate 0 bytes because tibufsize overflowed.  The next
+	time patch writes into the buffer, a segmentation fault will occur...
+	Depends on your system how long it takes until that happens. ;)
+
+	The fix is simple:  Bail out on lines that are too long.  Patch already
+	does that for files that have too many lines.
+
+2014-08-13  Andreas Gruenbacher  <agruen@linbit.com>
+
+	Improve error message when refusing to delete file
+	* src/patch.c: Improve error message.
+	* tests/create-delete: Update the test case.
+
+2013-12-09  Andreas Gruenbacher  <agruen@linbit.com>
+
+	Correct the --help text of option --merge
+	* src/patch.c (option_help): The --merge option does not have a short
+	form; update the help text.
+
+2013-08-19  Steven Rostedt  <rostedt@goodmis.org>
+
+	Preserve function names in reject files
+	* src/patch.c (main): Preserve function names in reject files.
+	* tests/reject-format: Update the test case.
+
+2013-07-30  Andreas Gruenbacher  <agruen@linbit.com>
+
+	Test case for the dry-run fix
+	* tests/create-directory: Add test case here.
+
+	In dry-run mode, create temporary files in a temporary directory
+	* src/util.c (make_tempfile): Do not create temporary files in the final output
+	directory when in dry-run mode: the path may be read-only.  In addition, we do
+	not want to leave intermediary empty output directories around.
+
+2013-06-18  Eric S. Raymond  <esr@thyrsus.com>
+
+	Fix some formatting problems in the manpage
+	* patch.1: Use higher-level markup that translates better into HTML and other
+	formats.  (With changes by Andreas Gruenbacher.)
+
+2013-05-02  Stefano Lattarini  <stefano.lattarini@gmail.com>  (tiny change)
+
+	build: don't use -Werror in AM_INIT_AUTOMAKE
+	Doing so prevents bootstrapping with bleeding-edge autotools,
+	because of harmless deprecation warnings (that are not planned
+	to become hard errors for at least a few years to come).  And
+	unfortunately, options in AM_INIT_AUTOMAKE take precedence over
+	those given on the command line (this is a long-time wart of
+	automake).
+
+	* configure.ac (AM_INIT_AUTOMAKE): Drop '-Werror' option.
+
+2013-03-10  Andreas Gruenbacher  <agruen@linbit.com>
+
+	Fix removing empty directories
+	Reported by Thomas Moschny <thomas.moschny@gmx.de>:
+	src/patch.c (main): Temporary output files are created in the same directory as
+	the output file.  Make sure to remove them before removing empty files and
+	their empty ancestor directories; else the directories won't be empty.
+	tests/remove-directories: Add directory removal test case.
+	tests/Makefile.am (TESTS): Add new test case.
+
+2013-01-03  Andreas Gruenbacher  <agruen@linbit.com>
+
+	Clarify the description of option --forward
+	* patch.man: Clarify the description of option --forward.
+
+2012-10-04  Andreas Gruenbacher  <agruen@linbit.com>
+
+	Initialize data structures early enough
+	* src/patch.c (main): Initialize data structures early enough, before error
+	paths can access them.
+	* tests/bad-usage: Test bad command line usage.
+	* tests/Makefile.am (TESTS): Add bad-usage here.
+
+2012-09-30  Andreas Gruenbacher  <agruen@linbit.com>
+
+	Don't fail test suite if printf '\0' is broken
+	* tests/create-delete: Skip binary diff test if printf '\0' is broken.
+
 2012-09-28  Andreas Gruenbacher  <agruen@linbit.com>
 
 	Version 2.7.1

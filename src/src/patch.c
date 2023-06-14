@@ -33,6 +33,7 @@
 #include <xalloc.h>
 #include <gl_linked_list.h>
 #include <gl_xlist.h>
+#include <minmax.h>
 
 /* procedures */
 
@@ -150,6 +151,10 @@ main (int argc, char **argv)
     else if ((version_control = getenv ("VERSION_CONTROL")))
       version_control_context = "$VERSION_CONTROL";
 
+    init_backup_hash_table ();
+    init_files_to_delete ();
+    init_files_to_output ();
+
     /* parse switches */
     Argc = argc;
     Argv = argv;
@@ -161,10 +166,6 @@ main (int argc, char **argv)
 
     if (make_backups | backup_if_mismatch)
       backup_type = get_version (version_control_context, version_control);
-
-    init_backup_hash_table ();
-    init_files_to_delete ();
-    init_files_to_output ();
 
     init_output (&outstate);
     if (outfile)
@@ -519,7 +520,7 @@ main (int argc, char **argv)
 		  mismatch = true;
 		  somefailed = true;
 		  if (verbosity != SILENT)
-		    say ("File %s is not empty after patch; not deleting\n",
+		    say ("Not deleting file %s as content differs from patch\n",
 			 quotearg (outname));
 		}
 
@@ -646,8 +647,8 @@ main (int argc, char **argv)
     if (outstate.ofp && (ferror (outstate.ofp) || fclose (outstate.ofp) != 0))
       write_fatal ();
     output_files (NULL);
-    delete_files ();
     cleanup ();
+    delete_files ();
     if (somefailed)
       exit (1);
     return 0;
@@ -762,7 +763,7 @@ static char const *const option_help[] =
 "",
 "  -D NAME  --ifdef=NAME  Make merged if-then-else output using NAME.",
 #ifdef ENABLE_MERGE
-"  -m  --merge  Merge using conflict markers instead of creating reject files.",
+"  --merge  Merge using conflict markers instead of creating reject files.",
 #endif
 "  -E  --remove-empty-files  Remove output files that are empty after patching.",
 "",
@@ -865,7 +866,7 @@ get_some_switches (void)
 	    case 'B':
 		if (!*optarg)
 		  fatal ("backup prefix is empty");
-		origprae = savestr (optarg);
+		origprae = xstrdup (optarg);
 		break;
 	    case 'c':
 		diff_type = CONTEXT_DIFF;
@@ -875,7 +876,7 @@ get_some_switches (void)
 		  pfatal ("Can't change to directory %s", quotearg (optarg));
 		break;
 	    case 'D':
-		do_defines = savestr (optarg);
+		do_defines = xstrdup (optarg);
 		break;
 	    case 'e':
 		diff_type = ED_DIFF;
@@ -893,7 +894,7 @@ get_some_switches (void)
 		patch_get = numeric_string (optarg, true, "get option value");
 		break;
 	    case 'i':
-		patchname = savestr (optarg);
+		patchname = xstrdup (optarg);
 		break;
 	    case 'l':
 		canonicalize = true;
@@ -921,13 +922,13 @@ get_some_switches (void)
 		noreverse = true;
 		break;
 	    case 'o':
-		outfile = savestr (optarg);
+		outfile = xstrdup (optarg);
 		break;
 	    case 'p':
 		strippath = numeric_string (optarg, false, "strip count");
 		break;
 	    case 'r':
-		rejname = savestr (optarg);
+		rejname = xstrdup (optarg);
 		break;
 	    case 'R':
 		reverse = true;
@@ -961,13 +962,13 @@ get_some_switches (void)
 	    case 'Y':
 		if (!*optarg)
 		  fatal ("backup basename prefix is empty");
-		origbase = savestr (optarg);
+		origbase = xstrdup (optarg);
 		break;
 	    case 'z':
 	    case_z:
 		if (!*optarg)
 		  fatal ("backup suffix is empty");
-		origsuff = savestr (optarg);
+		origsuff = xstrdup (optarg);
 		break;
 	    case 'Z':
 		set_utc = true;
@@ -1036,12 +1037,12 @@ get_some_switches (void)
     /* Process any filename args.  */
     if (optind < Argc)
       {
-	inname = savestr (Argv[optind++]);
+	inname = xstrdup (Argv[optind++]);
 	explicit_inname = true;
 	invc = -1;
 	if (optind < Argc)
 	  {
-	    patchname = savestr (Argv[optind++]);
+	    patchname = xstrdup (Argv[optind++]);
 	    if (optind < Argc)
 	      {
 		fprintf (stderr, "%s: %s: extra operand\n",
@@ -1107,8 +1108,8 @@ locate_hunk (lin fuzz)
     lin min_where = last_frozen_line + 1 - (prefix_context - prefix_fuzz);
     lin max_pos_offset = max_where - first_guess;
     lin max_neg_offset = first_guess - min_where;
-    lin max_offset = (max_pos_offset < max_neg_offset
-			  ? max_neg_offset : max_pos_offset);
+    lin max_offset = MAX(max_pos_offset, max_neg_offset);
+    lin min_offset;
 
     if (!pat_lines)			/* null range matches always */
 	return first_guess;
@@ -1154,7 +1155,10 @@ locate_hunk (lin fuzz)
 	  return 0;
       }
 
-    for (offset = 0;  offset <= max_offset;  offset++) {
+    min_offset = max_pos_offset < 0 ? first_guess - max_where
+	       : max_neg_offset < 0 ? first_guess - min_where
+	       : 0;
+    for (offset = min_offset;  offset <= max_offset;  offset++) {
 	char numbuf0[LINENUM_LENGTH_BOUND + 1];
 	char numbuf1[LINENUM_LENGTH_BOUND + 1];
 	if (offset <= max_pos_offset
@@ -1166,7 +1170,7 @@ locate_hunk (lin fuzz)
 	    in_offset += offset;
 	    return first_guess+offset;
 	}
-	if (0 < offset && offset <= max_neg_offset
+	if (offset <= max_neg_offset
 	    && patch_match (first_guess, -offset, prefix_fuzz, suffix_fuzz)) {
 	    if (debug & 1)
 	      say ("Offset changing from %s to %s\n",
@@ -1237,6 +1241,7 @@ abort_hunk_unified (bool header, bool reverse)
   lin old = 1;
   lin lastline = pch_ptrn_lines ();
   lin new = lastline + 1;
+  char const *c_function = pch_c_function();
 
   if (header)
     {
@@ -1251,7 +1256,7 @@ abort_hunk_unified (bool header, bool reverse)
   print_unidiff_range (rejfp, pch_first () + out_offset, lastline);
   fprintf (rejfp, " +");
   print_unidiff_range (rejfp, pch_newfirst () + out_offset, pch_repl_lines ());
-  fprintf (rejfp, " @@\n");
+  fprintf (rejfp, " @@%s\n", c_function ? c_function : "");
 
   while (pch_char (new) == '=' || pch_char (new) == '\n')
     new++;

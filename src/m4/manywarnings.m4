@@ -1,5 +1,5 @@
-# manywarnings.m4 serial 4
-dnl Copyright (C) 2008-2012 Free Software Foundation, Inc.
+# manywarnings.m4 serial 7
+dnl Copyright (C) 2008-2014 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -35,14 +35,12 @@ AC_DEFUN([gl_MANYWARN_COMPLEMENT],
 # make sure your gcc understands it.
 AC_DEFUN([gl_MANYWARN_ALL_GCC],
 [
-  dnl First, check if -Wno-missing-field-initializers is needed.
-  dnl -Wmissing-field-initializers is implied by -W, but that issues
-  dnl warnings with GCC version before 4.7, for the common idiom
-  dnl of initializing types on the stack to zero, using { 0, }
+  dnl First, check for some issues that only occur when combining multiple
+  dnl gcc warning categories.
   AC_REQUIRE([AC_PROG_CC])
   if test -n "$GCC"; then
 
-    dnl First, check -W -Werror -Wno-missing-field-initializers is supported
+    dnl Check if -W -Werror -Wno-missing-field-initializers is supported
     dnl with the current $CC $CFLAGS $CPPFLAGS.
     AC_MSG_CHECKING([whether -Wno-missing-field-initializers is supported])
     AC_CACHE_VAL([gl_cv_cc_nomfi_supported], [
@@ -77,13 +75,38 @@ AC_DEFUN([gl_MANYWARN_ALL_GCC],
       ])
       AC_MSG_RESULT([$gl_cv_cc_nomfi_needed])
     fi
+
+    dnl Next, check if -Werror -Wuninitialized is useful with the
+    dnl user's choice of $CFLAGS; some versions of gcc warn that it
+    dnl has no effect if -O is not also used
+    AC_MSG_CHECKING([whether -Wuninitialized is supported])
+    AC_CACHE_VAL([gl_cv_cc_uninitialized_supported], [
+      gl_save_CFLAGS="$CFLAGS"
+      CFLAGS="$CFLAGS -Werror -Wuninitialized"
+      AC_COMPILE_IFELSE(
+        [AC_LANG_PROGRAM([[]], [[]])],
+        [gl_cv_cc_uninitialized_supported=yes],
+        [gl_cv_cc_uninitialized_supported=no])
+      CFLAGS="$gl_save_CFLAGS"])
+    AC_MSG_RESULT([$gl_cv_cc_uninitialized_supported])
+
   fi
+
+  # List all gcc warning categories.
+  # To compare this list to your installed GCC's, run this Bash command:
+  #
+  # comm -3 \
+  #  <(sed -n 's/^  *\(-[^ ]*\) .*/\1/p' manywarnings.m4 | sort) \
+  #  <(gcc --help=warnings | sed -n 's/^  \(-[^ ]*\) .*/\1/p' | sort |
+  #      grep -v -x -f <(
+  #         awk '/^[^#]/ {print $1}' ../build-aux/gcc-warning.spec))
 
   gl_manywarn_set=
   for gl_manywarn_item in \
     -W \
     -Wabi \
     -Waddress \
+    -Waggressive-loop-optimizations \
     -Wall \
     -Warray-bounds \
     -Wattributes \
@@ -96,6 +119,7 @@ AC_DEFUN([gl_MANYWARN_ALL_GCC],
     -Wcomments \
     -Wcoverage-mismatch \
     -Wcpp \
+    -Wdate-time \
     -Wdeprecated \
     -Wdeprecated-declarations \
     -Wdisabled-optimization \
@@ -111,7 +135,6 @@ AC_DEFUN([gl_MANYWARN_ALL_GCC],
     -Wformat-security \
     -Wformat-y2k \
     -Wformat-zero-length \
-    -Wformat=2 \
     -Wfree-nonheap-object \
     -Wignored-qualifiers \
     -Wimplicit \
@@ -129,19 +152,16 @@ AC_DEFUN([gl_MANYWARN_ALL_GCC],
     -Wmissing-braces \
     -Wmissing-declarations \
     -Wmissing-field-initializers \
-    -Wmissing-format-attribute \
     -Wmissing-include-dirs \
-    -Wmissing-noreturn \
     -Wmissing-parameter-type \
     -Wmissing-prototypes \
-    -Wmudflap \
     -Wmultichar \
     -Wnarrowing \
     -Wnested-externs \
     -Wnonnull \
-    -Wnormalized=nfc \
     -Wold-style-declaration \
     -Wold-style-definition \
+    -Wopenmp-simd \
     -Woverflow \
     -Woverlength-strings \
     -Woverride-init \
@@ -152,6 +172,7 @@ AC_DEFUN([gl_MANYWARN_ALL_GCC],
     -Wpointer-sign \
     -Wpointer-to-int-cast \
     -Wpragmas \
+    -Wreturn-local-addr \
     -Wreturn-type \
     -Wsequence-point \
     -Wshadow \
@@ -173,7 +194,6 @@ AC_DEFUN([gl_MANYWARN_ALL_GCC],
     -Wtype-limits \
     -Wuninitialized \
     -Wunknown-pragmas \
-    -Wunreachable-code \
     -Wunsafe-loop-optimizations \
     -Wunused \
     -Wunused-but-set-parameter \
@@ -197,9 +217,28 @@ AC_DEFUN([gl_MANYWARN_ALL_GCC],
     gl_manywarn_set="$gl_manywarn_set $gl_manywarn_item"
   done
 
-  # Disable the missing-field-initializers warning if needed
+  # gcc --help=warnings outputs an unusual form for this option; list
+  # it here so that the above 'comm' command doesn't report a false match.
+  gl_manywarn_set="$gl_manywarn_set -Wnormalized=nfc"
+
+  # These are needed for older GCC versions.
+  if test -n "$GCC"; then
+    case `($CC --version) 2>/dev/null` in
+      'gcc (GCC) '[[0-3]].* | \
+      'gcc (GCC) '4.[[0-7]].*)
+        gl_manywarn_set="$gl_manywarn_set -fdiagnostics-show-option"
+        gl_manywarn_set="$gl_manywarn_set -funit-at-a-time"
+          ;;
+    esac
+  fi
+
+  # Disable specific options as needed.
   if test "$gl_cv_cc_nomfi_needed" = yes; then
     gl_manywarn_set="$gl_manywarn_set -Wno-missing-field-initializers"
+  fi
+
+  if test "$gl_cv_cc_uninitialized_supported" = no; then
+    gl_manywarn_set="$gl_manywarn_set -Wno-uninitialized"
   fi
 
   $1=$gl_manywarn_set

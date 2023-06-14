@@ -1,7 +1,7 @@
 %{
 /* Parse a string into an internal time stamp.
 
-   Copyright (C) 1999-2000, 2002-2012 Free Software Foundation, Inc.
+   Copyright (C) 1999-2000, 2002-2014 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -116,7 +116,7 @@ typedef time_t long_time_t;
 /* Convert a possibly-signed character to an unsigned character.  This is
    a bit safer than casting to unsigned char, since it catches some type
    errors that the cast doesn't.  */
-static inline unsigned char to_uchar (char ch) { return ch; }
+static unsigned char to_uchar (char ch) { return ch; }
 
 /* Lots of this code assumes time_t and time_t-like values fit into
    long_time_t.  */
@@ -1161,7 +1161,7 @@ yylex (YYSTYPE *lvalp, parser_control *pc)
 
           do
             {
-              if (p - buff < sizeof buff - 1)
+              if (p < buff + sizeof buff - 1)
                 *p++ = c;
               c = *++pc->input;
             }
@@ -1303,8 +1303,6 @@ parse_datetime (struct timespec *result, char const *p,
             char tz1buf[TZBUFSIZE];
             bool large_tz = TZBUFSIZE < tzsize;
             bool setenv_ok;
-            /* Free tz0, in case this is the 2nd or subsequent time through. */
-            free (tz0);
             tz0 = get_tz (tz0buf);
             z = tz1 = large_tz ? xmalloc (tzsize) : tz1buf;
             for (s = tzbase; *s != '"'; s++)
@@ -1316,7 +1314,12 @@ parse_datetime (struct timespec *result, char const *p,
             if (!setenv_ok)
               goto fail;
             tz_was_altered = true;
+
             p = s + 1;
+            while (c = *p, c_isspace (c))
+              p++;
+
+            break;
           }
     }
 
@@ -1472,7 +1475,7 @@ parse_datetime (struct timespec *result, char const *p,
                           + sizeof pc.time_zone * CHAR_BIT / 3];
               if (!tz_was_altered)
                 tz0 = get_tz (tz0buf);
-              sprintf (tz1buf, "XXX%s%ld:%02d", "-" + (time_zone < 0),
+              sprintf (tz1buf, "XXX%s%ld:%02d", &"-"[time_zone < 0],
                        abs_time_zone_hour, abs_time_zone_min);
               if (setenv ("TZ", tz1buf, 1) != 0)
                 goto fail;

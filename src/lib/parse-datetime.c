@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 2.5.  */
+/* A Bison parser, made by GNU Bison 2.7.  */
 
 /* Bison implementation for Yacc-like parsers in C
    
-      Copyright (C) 1984, 1989-1990, 2000-2011 Free Software Foundation, Inc.
+      Copyright (C) 1984, 1989-1990, 2000-2012 Free Software Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@
 #define YYBISON 1
 
 /* Bison version.  */
-#define YYBISON_VERSION "2.5"
+#define YYBISON_VERSION "2.7"
 
 /* Skeleton name.  */
 #define YYSKELETON_NAME "yacc.c"
@@ -58,19 +58,16 @@
 /* Pull parsers.  */
 #define YYPULL 1
 
-/* Using locations.  */
-#define YYLSP_NEEDED 0
 
 
 
 /* Copy the first part of user declarations.  */
-
-/* Line 268 of yacc.c  */
-#line 1 "parse-datetime.y"
+/* Line 371 of yacc.c  */
+#line 1 "./parse-datetime.y"
 
 /* Parse a string into an internal time stamp.
 
-   Copyright (C) 1999-2000, 2002-2012 Free Software Foundation, Inc.
+   Copyright (C) 1999-2000, 2002-2014 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -185,7 +182,7 @@ typedef time_t long_time_t;
 /* Convert a possibly-signed character to an unsigned character.  This is
    a bit safer than casting to unsigned char, since it catches some type
    errors that the cast doesn't.  */
-static inline unsigned char to_uchar (char ch) { return ch; }
+static unsigned char to_uchar (char ch) { return ch; }
 
 /* Lots of this code assumes time_t and time_t-like values fit into
    long_time_t.  */
@@ -352,14 +349,16 @@ set_hhmmss (parser_control *pc, long int hour, long int minutes,
 }
 
 
+/* Line 371 of yacc.c  */
+#line 354 "parse-datetime.c"
 
-/* Line 268 of yacc.c  */
-#line 358 "parse-datetime.c"
-
-/* Enabling traces.  */
-#ifndef YYDEBUG
-# define YYDEBUG 0
-#endif
+# ifndef YY_NULL
+#  if defined __cplusplus && 201103L <= __cplusplus
+#   define YY_NULL nullptr
+#  else
+#   define YY_NULL 0
+#  endif
+# endif
 
 /* Enabling verbose error messages.  */
 #ifdef YYERROR_VERBOSE
@@ -369,11 +368,14 @@ set_hhmmss (parser_control *pc, long int hour, long int minutes,
 # define YYERROR_VERBOSE 0
 #endif
 
-/* Enabling the token table.  */
-#ifndef YYTOKEN_TABLE
-# define YYTOKEN_TABLE 0
-#endif
 
+/* Enabling traces.  */
+#ifndef YYDEBUG
+# define YYDEBUG 0
+#endif
+#if YYDEBUG
+extern int yydebug;
+#endif
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -427,13 +429,11 @@ set_hhmmss (parser_control *pc, long int hour, long int minutes,
 
 
 
-
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
 {
-
-/* Line 293 of yacc.c  */
-#line 297 "parse-datetime.y"
+/* Line 387 of yacc.c  */
+#line 297 "./parse-datetime.y"
 
   long int intval;
   textint textintval;
@@ -441,9 +441,8 @@ typedef union YYSTYPE
   relative_time rel;
 
 
-
-/* Line 293 of yacc.c  */
-#line 447 "parse-datetime.c"
+/* Line 387 of yacc.c  */
+#line 446 "parse-datetime.c"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -451,11 +450,26 @@ typedef union YYSTYPE
 #endif
 
 
+#ifdef YYPARSE_PARAM
+#if defined __STDC__ || defined __cplusplus
+int yyparse (void *YYPARSE_PARAM);
+#else
+int yyparse ();
+#endif
+#else /* ! YYPARSE_PARAM */
+#if defined __STDC__ || defined __cplusplus
+int yyparse (parser_control *pc);
+#else
+int yyparse ();
+#endif
+#endif /* ! YYPARSE_PARAM */
+
+
+
 /* Copy the second part of user declarations.  */
 
-
-/* Line 343 of yacc.c  */
-#line 459 "parse-datetime.c"
+/* Line 390 of yacc.c  */
+#line 473 "parse-datetime.c"
 
 #ifdef short
 # undef short
@@ -508,24 +522,24 @@ typedef short int yytype_int16;
 # if defined YYENABLE_NLS && YYENABLE_NLS
 #  if ENABLE_NLS
 #   include <libintl.h> /* INFRINGES ON USER NAME SPACE */
-#   define YY_(msgid) dgettext ("bison-runtime", msgid)
+#   define YY_(Msgid) dgettext ("bison-runtime", Msgid)
 #  endif
 # endif
 # ifndef YY_
-#  define YY_(msgid) msgid
+#  define YY_(Msgid) Msgid
 # endif
 #endif
 
 /* Suppress unused-variable warnings by "using" E.  */
 #if ! defined lint || defined __GNUC__
-# define YYUSE(e) ((void) (e))
+# define YYUSE(E) ((void) (E))
 #else
-# define YYUSE(e) /* empty */
+# define YYUSE(E) /* empty */
 #endif
 
 /* Identity function, used to suppress warnings about constant conditions.  */
 #ifndef lint
-# define YYID(n) (n)
+# define YYID(N) (N)
 #else
 #if (defined __STDC__ || defined __C99__FUNC__ \
      || defined __cplusplus || defined _MSC_VER)
@@ -561,6 +575,7 @@ YYID (yyi)
 #    if ! defined _ALLOCA_H && ! defined EXIT_SUCCESS && (defined __STDC__ || defined __C99__FUNC__ \
      || defined __cplusplus || defined _MSC_VER)
 #     include <stdlib.h> /* INFRINGES ON USER NAME SPACE */
+      /* Use EXIT_SUCCESS as a witness for stdlib.h.  */
 #     ifndef EXIT_SUCCESS
 #      define EXIT_SUCCESS 0
 #     endif
@@ -652,20 +667,20 @@ union yyalloc
 #endif
 
 #if defined YYCOPY_NEEDED && YYCOPY_NEEDED
-/* Copy COUNT objects from FROM to TO.  The source and destination do
+/* Copy COUNT objects from SRC to DST.  The source and destination do
    not overlap.  */
 # ifndef YYCOPY
 #  if defined __GNUC__ && 1 < __GNUC__
-#   define YYCOPY(To, From, Count) \
-      __builtin_memcpy (To, From, (Count) * sizeof (*(From)))
+#   define YYCOPY(Dst, Src, Count) \
+      __builtin_memcpy (Dst, Src, (Count) * sizeof (*(Src)))
 #  else
-#   define YYCOPY(To, From, Count)		\
-      do					\
-	{					\
-	  YYSIZE_T yyi;				\
-	  for (yyi = 0; yyi < (Count); yyi++)	\
-	    (To)[yyi] = (From)[yyi];		\
-	}					\
+#   define YYCOPY(Dst, Src, Count)              \
+      do                                        \
+        {                                       \
+          YYSIZE_T yyi;                         \
+          for (yyi = 0; yyi < (Count); yyi++)   \
+            (Dst)[yyi] = (Src)[yyi];            \
+        }                                       \
       while (YYID (0))
 #  endif
 # endif
@@ -789,7 +804,7 @@ static const yytype_uint16 yyrline[] =
 };
 #endif
 
-#if YYDEBUG || YYERROR_VERBOSE || YYTOKEN_TABLE
+#if YYDEBUG || YYERROR_VERBOSE || 0
 /* YYTNAME[SYMBOL-NUM] -- String name of the symbol SYMBOL-NUM.
    First, the terminals, then, starting at YYNTOKENS, nonterminals.  */
 static const char *const yytname[] =
@@ -803,7 +818,7 @@ static const char *const yytname[] =
   "iso_8601_time", "o_zone_offset", "zone_offset", "local_zone", "zone",
   "day", "date", "iso_8601_date", "rel", "relunit", "relunit_snumber",
   "dayshift", "seconds", "signed_seconds", "unsigned_seconds", "number",
-  "hybrid", "o_colon_minutes", 0
+  "hybrid", "o_colon_minutes", YY_NULL
 };
 #endif
 
@@ -922,10 +937,10 @@ static const yytype_uint8 yytable[] =
      101,     0,    88
 };
 
-#define yypact_value_is_default(yystate) \
-  ((yystate) == (-93))
+#define yypact_value_is_default(Yystate) \
+  (!!((Yystate) == (-93)))
 
-#define yytable_value_is_error(yytable_value) \
+#define yytable_value_is_error(Yytable_value) \
   YYID (0)
 
 static const yytype_int8 yycheck[] =
@@ -989,62 +1004,35 @@ static const yytype_uint8 yystos[] =
 
 #define YYRECOVERING()  (!!yyerrstatus)
 
-#define YYBACKUP(Token, Value)					\
-do								\
-  if (yychar == YYEMPTY && yylen == 1)				\
-    {								\
-      yychar = (Token);						\
-      yylval = (Value);						\
-      YYPOPSTACK (1);						\
-      goto yybackup;						\
-    }								\
-  else								\
-    {								\
+#define YYBACKUP(Token, Value)                                  \
+do                                                              \
+  if (yychar == YYEMPTY)                                        \
+    {                                                           \
+      yychar = (Token);                                         \
+      yylval = (Value);                                         \
+      YYPOPSTACK (yylen);                                       \
+      yystate = *yyssp;                                         \
+      goto yybackup;                                            \
+    }                                                           \
+  else                                                          \
+    {                                                           \
       yyerror (pc, YY_("syntax error: cannot back up")); \
       YYERROR;							\
     }								\
 while (YYID (0))
 
-
+/* Error token number */
 #define YYTERROR	1
 #define YYERRCODE	256
 
 
-/* YYLLOC_DEFAULT -- Set CURRENT to span from RHS[1] to RHS[N].
-   If N is 0, then set CURRENT to the empty location which ends
-   the previous symbol: RHS[0] (always defined).  */
-
-#define YYRHSLOC(Rhs, K) ((Rhs)[K])
-#ifndef YYLLOC_DEFAULT
-# define YYLLOC_DEFAULT(Current, Rhs, N)				\
-    do									\
-      if (YYID (N))                                                    \
-	{								\
-	  (Current).first_line   = YYRHSLOC (Rhs, 1).first_line;	\
-	  (Current).first_column = YYRHSLOC (Rhs, 1).first_column;	\
-	  (Current).last_line    = YYRHSLOC (Rhs, N).last_line;		\
-	  (Current).last_column  = YYRHSLOC (Rhs, N).last_column;	\
-	}								\
-      else								\
-	{								\
-	  (Current).first_line   = (Current).last_line   =		\
-	    YYRHSLOC (Rhs, 0).last_line;				\
-	  (Current).first_column = (Current).last_column =		\
-	    YYRHSLOC (Rhs, 0).last_column;				\
-	}								\
-    while (YYID (0))
-#endif
-
-
 /* This macro is provided for backward compatibility. */
-
 #ifndef YY_LOCATION_PRINT
 # define YY_LOCATION_PRINT(File, Loc) ((void) 0)
 #endif
 
 
 /* YYLEX -- calling `yylex' with the right arguments.  */
-
 #ifdef YYLEX_PARAM
 # define YYLEX yylex (&yylval, YYLEX_PARAM)
 #else
@@ -1095,6 +1083,8 @@ yy_symbol_value_print (yyoutput, yytype, yyvaluep, pc)
     parser_control *pc;
 #endif
 {
+  FILE *yyo = yyoutput;
+  YYUSE (yyo);
   if (!yyvaluep)
     return;
   YYUSE (pc);
@@ -1107,7 +1097,7 @@ yy_symbol_value_print (yyoutput, yytype, yyvaluep, pc)
   switch (yytype)
     {
       default:
-	break;
+        break;
     }
 }
 
@@ -1349,12 +1339,11 @@ static int
 yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
                 yytype_int16 *yyssp, int yytoken)
 {
-  YYSIZE_T yysize0 = yytnamerr (0, yytname[yytoken]);
+  YYSIZE_T yysize0 = yytnamerr (YY_NULL, yytname[yytoken]);
   YYSIZE_T yysize = yysize0;
-  YYSIZE_T yysize1;
   enum { YYERROR_VERBOSE_ARGS_MAXIMUM = 5 };
   /* Internationalized format string. */
-  const char *yyformat = 0;
+  const char *yyformat = YY_NULL;
   /* Arguments of yyformat. */
   char const *yyarg[YYERROR_VERBOSE_ARGS_MAXIMUM];
   /* Number of reported tokens (one for the "unexpected", one per
@@ -1414,11 +1403,13 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
                     break;
                   }
                 yyarg[yycount++] = yytname[yyx];
-                yysize1 = yysize + yytnamerr (0, yytname[yyx]);
-                if (! (yysize <= yysize1
-                       && yysize1 <= YYSTACK_ALLOC_MAXIMUM))
-                  return 2;
-                yysize = yysize1;
+                {
+                  YYSIZE_T yysize1 = yysize + yytnamerr (YY_NULL, yytname[yyx]);
+                  if (! (yysize <= yysize1
+                         && yysize1 <= YYSTACK_ALLOC_MAXIMUM))
+                    return 2;
+                  yysize = yysize1;
+                }
               }
         }
     }
@@ -1438,10 +1429,12 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
 # undef YYCASE_
     }
 
-  yysize1 = yysize + yystrlen (yyformat);
-  if (! (yysize <= yysize1 && yysize1 <= YYSTACK_ALLOC_MAXIMUM))
-    return 2;
-  yysize = yysize1;
+  {
+    YYSIZE_T yysize1 = yysize + yystrlen (yyformat);
+    if (! (yysize <= yysize1 && yysize1 <= YYSTACK_ALLOC_MAXIMUM))
+      return 2;
+    yysize = yysize1;
+  }
 
   if (*yymsg_alloc < yysize)
     {
@@ -1503,25 +1496,11 @@ yydestruct (yymsg, yytype, yyvaluep, pc)
     {
 
       default:
-	break;
+        break;
     }
 }
 
 
-/* Prevent warnings from -Wmissing-prototypes.  */
-#ifdef YYPARSE_PARAM
-#if defined __STDC__ || defined __cplusplus
-int yyparse (void *YYPARSE_PARAM);
-#else
-int yyparse ();
-#endif
-#else /* ! YYPARSE_PARAM */
-#if defined __STDC__ || defined __cplusplus
-int yyparse (parser_control *pc);
-#else
-int yyparse ();
-#endif
-#endif /* ! YYPARSE_PARAM */
 
 
 /*----------.
@@ -1553,8 +1532,31 @@ yyparse (pc)
 /* The lookahead symbol.  */
 int yychar;
 
+
+#if defined __GNUC__ && 407 <= __GNUC__ * 100 + __GNUC_MINOR__
+/* Suppress an incorrect diagnostic about yylval being uninitialized.  */
+# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN \
+    _Pragma ("GCC diagnostic push") \
+    _Pragma ("GCC diagnostic ignored \"-Wuninitialized\"")\
+    _Pragma ("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")
+# define YY_IGNORE_MAYBE_UNINITIALIZED_END \
+    _Pragma ("GCC diagnostic pop")
+#else
+/* Default value used for initialization, for pacifying older GCCs
+   or non-GCC compilers.  */
+static YYSTYPE yyval_default;
+# define YY_INITIAL_VALUE(Value) = Value
+#endif
+#ifndef YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
+# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
+# define YY_IGNORE_MAYBE_UNINITIALIZED_END
+#endif
+#ifndef YY_INITIAL_VALUE
+# define YY_INITIAL_VALUE(Value) /* Nothing. */
+#endif
+
 /* The semantic value of the lookahead symbol.  */
-YYSTYPE yylval;
+YYSTYPE yylval YY_INITIAL_VALUE(yyval_default);
 
     /* Number of syntax errors so far.  */
     int yynerrs;
@@ -1567,7 +1569,7 @@ YYSTYPE yylval;
        `yyss': related to states.
        `yyvs': related to semantic values.
 
-       Refer to the stacks thru separate pointers, to allow yyoverflow
+       Refer to the stacks through separate pointers, to allow yyoverflow
        to reallocate them elsewhere.  */
 
     /* The state stack.  */
@@ -1585,7 +1587,7 @@ YYSTYPE yylval;
   int yyn;
   int yyresult;
   /* Lookahead token as an internal (translated) token number.  */
-  int yytoken;
+  int yytoken = 0;
   /* The variables used to return semantic value and location from the
      action routines.  */
   YYSTYPE yyval;
@@ -1603,9 +1605,8 @@ YYSTYPE yylval;
      Keep to zero when no symbol should be popped.  */
   int yylen = 0;
 
-  yytoken = 0;
-  yyss = yyssa;
-  yyvs = yyvsa;
+  yyssp = yyss = yyssa;
+  yyvsp = yyvs = yyvsa;
   yystacksize = YYINITDEPTH;
 
   YYDPRINTF ((stderr, "Starting parse\n"));
@@ -1614,14 +1615,6 @@ YYSTYPE yylval;
   yyerrstatus = 0;
   yynerrs = 0;
   yychar = YYEMPTY; /* Cause a token to be read.  */
-
-  /* Initialize stack pointers.
-     Waste one element of value and location stack
-     so that they stay on the same level as the state stack.
-     The wasted elements are never initialized.  */
-  yyssp = yyss;
-  yyvsp = yyvs;
-
   goto yysetstate;
 
 /*------------------------------------------------------------.
@@ -1762,7 +1755,9 @@ yybackup:
   yychar = YYEMPTY;
 
   yystate = yyn;
+  YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
   *++yyvsp = yylval;
+  YY_IGNORE_MAYBE_UNINITIALIZED_END
 
   goto yynewstate;
 
@@ -1799,9 +1794,8 @@ yyreduce:
   switch (yyn)
     {
         case 4:
-
-/* Line 1806 of yacc.c  */
-#line 330 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 330 "./parse-datetime.y"
     {
         pc->seconds = (yyvsp[(2) - (2)].timespec);
         pc->timespec_seen = true;
@@ -1809,51 +1803,44 @@ yyreduce:
     break;
 
   case 7:
-
-/* Line 1806 of yacc.c  */
-#line 343 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 343 "./parse-datetime.y"
     { pc->times_seen++; pc->dates_seen++; }
     break;
 
   case 8:
-
-/* Line 1806 of yacc.c  */
-#line 345 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 345 "./parse-datetime.y"
     { pc->times_seen++; }
     break;
 
   case 9:
-
-/* Line 1806 of yacc.c  */
-#line 347 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 347 "./parse-datetime.y"
     { pc->local_zones_seen++; }
     break;
 
   case 10:
-
-/* Line 1806 of yacc.c  */
-#line 349 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 349 "./parse-datetime.y"
     { pc->zones_seen++; }
     break;
 
   case 11:
-
-/* Line 1806 of yacc.c  */
-#line 351 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 351 "./parse-datetime.y"
     { pc->dates_seen++; }
     break;
 
   case 12:
-
-/* Line 1806 of yacc.c  */
-#line 353 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 353 "./parse-datetime.y"
     { pc->days_seen++; }
     break;
 
   case 18:
-
-/* Line 1806 of yacc.c  */
-#line 369 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 369 "./parse-datetime.y"
     {
         set_hhmmss (pc, (yyvsp[(1) - (2)].textintval).value, 0, 0, 0);
         pc->meridian = (yyvsp[(2) - (2)].intval);
@@ -1861,9 +1848,8 @@ yyreduce:
     break;
 
   case 19:
-
-/* Line 1806 of yacc.c  */
-#line 374 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 374 "./parse-datetime.y"
     {
         set_hhmmss (pc, (yyvsp[(1) - (4)].textintval).value, (yyvsp[(3) - (4)].textintval).value, 0, 0);
         pc->meridian = (yyvsp[(4) - (4)].intval);
@@ -1871,9 +1857,8 @@ yyreduce:
     break;
 
   case 20:
-
-/* Line 1806 of yacc.c  */
-#line 379 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 379 "./parse-datetime.y"
     {
         set_hhmmss (pc, (yyvsp[(1) - (6)].textintval).value, (yyvsp[(3) - (6)].textintval).value, (yyvsp[(5) - (6)].timespec).tv_sec, (yyvsp[(5) - (6)].timespec).tv_nsec);
         pc->meridian = (yyvsp[(6) - (6)].intval);
@@ -1881,9 +1866,8 @@ yyreduce:
     break;
 
   case 22:
-
-/* Line 1806 of yacc.c  */
-#line 388 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 388 "./parse-datetime.y"
     {
         set_hhmmss (pc, (yyvsp[(1) - (2)].textintval).value, 0, 0, 0);
         pc->meridian = MER24;
@@ -1891,9 +1875,8 @@ yyreduce:
     break;
 
   case 23:
-
-/* Line 1806 of yacc.c  */
-#line 393 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 393 "./parse-datetime.y"
     {
         set_hhmmss (pc, (yyvsp[(1) - (4)].textintval).value, (yyvsp[(3) - (4)].textintval).value, 0, 0);
         pc->meridian = MER24;
@@ -1901,9 +1884,8 @@ yyreduce:
     break;
 
   case 24:
-
-/* Line 1806 of yacc.c  */
-#line 398 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 398 "./parse-datetime.y"
     {
         set_hhmmss (pc, (yyvsp[(1) - (6)].textintval).value, (yyvsp[(3) - (6)].textintval).value, (yyvsp[(5) - (6)].timespec).tv_sec, (yyvsp[(5) - (6)].timespec).tv_nsec);
         pc->meridian = MER24;
@@ -1911,9 +1893,8 @@ yyreduce:
     break;
 
   case 27:
-
-/* Line 1806 of yacc.c  */
-#line 411 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 411 "./parse-datetime.y"
     {
         pc->zones_seen++;
         pc->time_zone = time_zone_hhmm (pc, (yyvsp[(1) - (2)].textintval), (yyvsp[(2) - (2)].intval));
@@ -1921,9 +1902,8 @@ yyreduce:
     break;
 
   case 28:
-
-/* Line 1806 of yacc.c  */
-#line 419 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 419 "./parse-datetime.y"
     {
         pc->local_isdst = (yyvsp[(1) - (1)].intval);
         pc->dsts_seen += (0 < (yyvsp[(1) - (1)].intval));
@@ -1931,9 +1911,8 @@ yyreduce:
     break;
 
   case 29:
-
-/* Line 1806 of yacc.c  */
-#line 424 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 424 "./parse-datetime.y"
     {
         pc->local_isdst = 1;
         pc->dsts_seen += (0 < (yyvsp[(1) - (2)].intval)) + 1;
@@ -1941,60 +1920,52 @@ yyreduce:
     break;
 
   case 30:
-
-/* Line 1806 of yacc.c  */
-#line 434 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 434 "./parse-datetime.y"
     { pc->time_zone = (yyvsp[(1) - (1)].intval); }
     break;
 
   case 31:
-
-/* Line 1806 of yacc.c  */
-#line 436 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 436 "./parse-datetime.y"
     { pc->time_zone = HOUR(7); }
     break;
 
   case 32:
-
-/* Line 1806 of yacc.c  */
-#line 438 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 438 "./parse-datetime.y"
     { pc->time_zone = (yyvsp[(1) - (2)].intval);
         apply_relative_time (pc, (yyvsp[(2) - (2)].rel), 1); }
     break;
 
   case 33:
-
-/* Line 1806 of yacc.c  */
-#line 441 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 441 "./parse-datetime.y"
     { pc->time_zone = HOUR(7);
         apply_relative_time (pc, (yyvsp[(2) - (2)].rel), 1); }
     break;
 
   case 34:
-
-/* Line 1806 of yacc.c  */
-#line 444 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 444 "./parse-datetime.y"
     { pc->time_zone = (yyvsp[(1) - (3)].intval) + time_zone_hhmm (pc, (yyvsp[(2) - (3)].textintval), (yyvsp[(3) - (3)].intval)); }
     break;
 
   case 35:
-
-/* Line 1806 of yacc.c  */
-#line 446 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 446 "./parse-datetime.y"
     { pc->time_zone = (yyvsp[(1) - (1)].intval) + 60; }
     break;
 
   case 36:
-
-/* Line 1806 of yacc.c  */
-#line 448 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 448 "./parse-datetime.y"
     { pc->time_zone = (yyvsp[(1) - (2)].intval) + 60; }
     break;
 
   case 37:
-
-/* Line 1806 of yacc.c  */
-#line 453 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 453 "./parse-datetime.y"
     {
         pc->day_ordinal = 0;
         pc->day_number = (yyvsp[(1) - (1)].intval);
@@ -2002,9 +1973,8 @@ yyreduce:
     break;
 
   case 38:
-
-/* Line 1806 of yacc.c  */
-#line 458 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 458 "./parse-datetime.y"
     {
         pc->day_ordinal = 0;
         pc->day_number = (yyvsp[(1) - (2)].intval);
@@ -2012,9 +1982,8 @@ yyreduce:
     break;
 
   case 39:
-
-/* Line 1806 of yacc.c  */
-#line 463 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 463 "./parse-datetime.y"
     {
         pc->day_ordinal = (yyvsp[(1) - (2)].intval);
         pc->day_number = (yyvsp[(2) - (2)].intval);
@@ -2022,9 +1991,8 @@ yyreduce:
     break;
 
   case 40:
-
-/* Line 1806 of yacc.c  */
-#line 468 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 468 "./parse-datetime.y"
     {
         pc->day_ordinal = (yyvsp[(1) - (2)].textintval).value;
         pc->day_number = (yyvsp[(2) - (2)].intval);
@@ -2032,9 +2000,8 @@ yyreduce:
     break;
 
   case 41:
-
-/* Line 1806 of yacc.c  */
-#line 476 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 476 "./parse-datetime.y"
     {
         pc->month = (yyvsp[(1) - (3)].textintval).value;
         pc->day = (yyvsp[(3) - (3)].textintval).value;
@@ -2042,9 +2009,8 @@ yyreduce:
     break;
 
   case 42:
-
-/* Line 1806 of yacc.c  */
-#line 481 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 481 "./parse-datetime.y"
     {
         /* Interpret as YYYY/MM/DD if the first value has 4 or more digits,
            otherwise as MM/DD/YY.
@@ -2067,9 +2033,8 @@ yyreduce:
     break;
 
   case 43:
-
-/* Line 1806 of yacc.c  */
-#line 501 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 501 "./parse-datetime.y"
     {
         /* e.g. 17-JUN-1992.  */
         pc->day = (yyvsp[(1) - (3)].textintval).value;
@@ -2080,9 +2045,8 @@ yyreduce:
     break;
 
   case 44:
-
-/* Line 1806 of yacc.c  */
-#line 509 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 509 "./parse-datetime.y"
     {
         /* e.g. JUN-17-1992.  */
         pc->month = (yyvsp[(1) - (3)].intval);
@@ -2093,9 +2057,8 @@ yyreduce:
     break;
 
   case 45:
-
-/* Line 1806 of yacc.c  */
-#line 517 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 517 "./parse-datetime.y"
     {
         pc->month = (yyvsp[(1) - (2)].intval);
         pc->day = (yyvsp[(2) - (2)].textintval).value;
@@ -2103,9 +2066,8 @@ yyreduce:
     break;
 
   case 46:
-
-/* Line 1806 of yacc.c  */
-#line 522 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 522 "./parse-datetime.y"
     {
         pc->month = (yyvsp[(1) - (4)].intval);
         pc->day = (yyvsp[(2) - (4)].textintval).value;
@@ -2114,9 +2076,8 @@ yyreduce:
     break;
 
   case 47:
-
-/* Line 1806 of yacc.c  */
-#line 528 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 528 "./parse-datetime.y"
     {
         pc->day = (yyvsp[(1) - (2)].textintval).value;
         pc->month = (yyvsp[(2) - (2)].intval);
@@ -2124,9 +2085,8 @@ yyreduce:
     break;
 
   case 48:
-
-/* Line 1806 of yacc.c  */
-#line 533 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 533 "./parse-datetime.y"
     {
         pc->day = (yyvsp[(1) - (3)].textintval).value;
         pc->month = (yyvsp[(2) - (3)].intval);
@@ -2135,9 +2095,8 @@ yyreduce:
     break;
 
   case 50:
-
-/* Line 1806 of yacc.c  */
-#line 543 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 543 "./parse-datetime.y"
     {
         /* ISO 8601 format.  YYYY-MM-DD.  */
         pc->year = (yyvsp[(1) - (3)].textintval);
@@ -2147,240 +2106,206 @@ yyreduce:
     break;
 
   case 51:
-
-/* Line 1806 of yacc.c  */
-#line 553 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 553 "./parse-datetime.y"
     { apply_relative_time (pc, (yyvsp[(1) - (2)].rel), (yyvsp[(2) - (2)].intval)); }
     break;
 
   case 52:
-
-/* Line 1806 of yacc.c  */
-#line 555 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 555 "./parse-datetime.y"
     { apply_relative_time (pc, (yyvsp[(1) - (1)].rel), 1); }
     break;
 
   case 53:
-
-/* Line 1806 of yacc.c  */
-#line 557 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 557 "./parse-datetime.y"
     { apply_relative_time (pc, (yyvsp[(1) - (1)].rel), 1); }
     break;
 
   case 54:
-
-/* Line 1806 of yacc.c  */
-#line 562 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 562 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).year = (yyvsp[(1) - (2)].intval); }
     break;
 
   case 55:
-
-/* Line 1806 of yacc.c  */
-#line 564 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 564 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).year = (yyvsp[(1) - (2)].textintval).value; }
     break;
 
   case 56:
-
-/* Line 1806 of yacc.c  */
-#line 566 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 566 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).year = 1; }
     break;
 
   case 57:
-
-/* Line 1806 of yacc.c  */
-#line 568 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 568 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).month = (yyvsp[(1) - (2)].intval); }
     break;
 
   case 58:
-
-/* Line 1806 of yacc.c  */
-#line 570 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 570 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).month = (yyvsp[(1) - (2)].textintval).value; }
     break;
 
   case 59:
-
-/* Line 1806 of yacc.c  */
-#line 572 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 572 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).month = 1; }
     break;
 
   case 60:
-
-/* Line 1806 of yacc.c  */
-#line 574 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 574 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).day = (yyvsp[(1) - (2)].intval) * (yyvsp[(2) - (2)].intval); }
     break;
 
   case 61:
-
-/* Line 1806 of yacc.c  */
-#line 576 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 576 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).day = (yyvsp[(1) - (2)].textintval).value * (yyvsp[(2) - (2)].intval); }
     break;
 
   case 62:
-
-/* Line 1806 of yacc.c  */
-#line 578 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 578 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).day = (yyvsp[(1) - (1)].intval); }
     break;
 
   case 63:
-
-/* Line 1806 of yacc.c  */
-#line 580 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 580 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).hour = (yyvsp[(1) - (2)].intval); }
     break;
 
   case 64:
-
-/* Line 1806 of yacc.c  */
-#line 582 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 582 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).hour = (yyvsp[(1) - (2)].textintval).value; }
     break;
 
   case 65:
-
-/* Line 1806 of yacc.c  */
-#line 584 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 584 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).hour = 1; }
     break;
 
   case 66:
-
-/* Line 1806 of yacc.c  */
-#line 586 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 586 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).minutes = (yyvsp[(1) - (2)].intval); }
     break;
 
   case 67:
-
-/* Line 1806 of yacc.c  */
-#line 588 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 588 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).minutes = (yyvsp[(1) - (2)].textintval).value; }
     break;
 
   case 68:
-
-/* Line 1806 of yacc.c  */
-#line 590 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 590 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).minutes = 1; }
     break;
 
   case 69:
-
-/* Line 1806 of yacc.c  */
-#line 592 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 592 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).seconds = (yyvsp[(1) - (2)].intval); }
     break;
 
   case 70:
-
-/* Line 1806 of yacc.c  */
-#line 594 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 594 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).seconds = (yyvsp[(1) - (2)].textintval).value; }
     break;
 
   case 71:
-
-/* Line 1806 of yacc.c  */
-#line 596 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 596 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).seconds = (yyvsp[(1) - (2)].timespec).tv_sec; (yyval.rel).ns = (yyvsp[(1) - (2)].timespec).tv_nsec; }
     break;
 
   case 72:
-
-/* Line 1806 of yacc.c  */
-#line 598 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 598 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).seconds = (yyvsp[(1) - (2)].timespec).tv_sec; (yyval.rel).ns = (yyvsp[(1) - (2)].timespec).tv_nsec; }
     break;
 
   case 73:
-
-/* Line 1806 of yacc.c  */
-#line 600 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 600 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).seconds = 1; }
     break;
 
   case 75:
-
-/* Line 1806 of yacc.c  */
-#line 606 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 606 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).year = (yyvsp[(1) - (2)].textintval).value; }
     break;
 
   case 76:
-
-/* Line 1806 of yacc.c  */
-#line 608 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 608 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).month = (yyvsp[(1) - (2)].textintval).value; }
     break;
 
   case 77:
-
-/* Line 1806 of yacc.c  */
-#line 610 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 610 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).day = (yyvsp[(1) - (2)].textintval).value * (yyvsp[(2) - (2)].intval); }
     break;
 
   case 78:
-
-/* Line 1806 of yacc.c  */
-#line 612 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 612 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).hour = (yyvsp[(1) - (2)].textintval).value; }
     break;
 
   case 79:
-
-/* Line 1806 of yacc.c  */
-#line 614 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 614 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).minutes = (yyvsp[(1) - (2)].textintval).value; }
     break;
 
   case 80:
-
-/* Line 1806 of yacc.c  */
-#line 616 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 616 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).seconds = (yyvsp[(1) - (2)].textintval).value; }
     break;
 
   case 81:
-
-/* Line 1806 of yacc.c  */
-#line 621 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 621 "./parse-datetime.y"
     { (yyval.rel) = RELATIVE_TIME_0; (yyval.rel).day = (yyvsp[(1) - (1)].intval); }
     break;
 
   case 85:
-
-/* Line 1806 of yacc.c  */
-#line 629 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 629 "./parse-datetime.y"
     { (yyval.timespec).tv_sec = (yyvsp[(1) - (1)].textintval).value; (yyval.timespec).tv_nsec = 0; }
     break;
 
   case 87:
-
-/* Line 1806 of yacc.c  */
-#line 635 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 635 "./parse-datetime.y"
     { (yyval.timespec).tv_sec = (yyvsp[(1) - (1)].textintval).value; (yyval.timespec).tv_nsec = 0; }
     break;
 
   case 88:
-
-/* Line 1806 of yacc.c  */
-#line 640 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 640 "./parse-datetime.y"
     { digits_to_date_time (pc, (yyvsp[(1) - (1)].textintval)); }
     break;
 
   case 89:
-
-/* Line 1806 of yacc.c  */
-#line 645 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 645 "./parse-datetime.y"
     {
         /* Hybrid all-digit and relative offset, so that we accept e.g.,
            "YYYYMMDD +N days" as well as "YYYYMMDD N days".  */
@@ -2390,23 +2315,20 @@ yyreduce:
     break;
 
   case 90:
-
-/* Line 1806 of yacc.c  */
-#line 655 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 655 "./parse-datetime.y"
     { (yyval.intval) = -1; }
     break;
 
   case 91:
-
-/* Line 1806 of yacc.c  */
-#line 657 "parse-datetime.y"
+/* Line 1792 of yacc.c  */
+#line 657 "./parse-datetime.y"
     { (yyval.intval) = (yyvsp[(2) - (2)].textintval).value; }
     break;
 
 
-
-/* Line 1806 of yacc.c  */
-#line 2410 "parse-datetime.c"
+/* Line 1792 of yacc.c  */
+#line 2332 "parse-datetime.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2569,7 +2491,9 @@ yyerrlab1:
       YY_STACK_PRINT (yyss, yyssp);
     }
 
+  YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
   *++yyvsp = yylval;
+  YY_IGNORE_MAYBE_UNINITIALIZED_END
 
 
   /* Shift the error token.  */
@@ -2593,7 +2517,7 @@ yyabortlab:
   yyresult = 1;
   goto yyreturn;
 
-#if !defined(yyoverflow) || YYERROR_VERBOSE
+#if !defined yyoverflow || YYERROR_VERBOSE
 /*-------------------------------------------------.
 | yyexhaustedlab -- memory exhaustion comes here.  |
 `-------------------------------------------------*/
@@ -2635,9 +2559,8 @@ yyreturn:
 }
 
 
-
-/* Line 2067 of yacc.c  */
-#line 660 "parse-datetime.y"
+/* Line 2055 of yacc.c  */
+#line 660 "./parse-datetime.y"
 
 
 static table const meridian_table[] =
@@ -3142,7 +3065,7 @@ yylex (YYSTYPE *lvalp, parser_control *pc)
 
           do
             {
-              if (p - buff < sizeof buff - 1)
+              if (p < buff + sizeof buff - 1)
                 *p++ = c;
               c = *++pc->input;
             }
@@ -3284,8 +3207,6 @@ parse_datetime (struct timespec *result, char const *p,
             char tz1buf[TZBUFSIZE];
             bool large_tz = TZBUFSIZE < tzsize;
             bool setenv_ok;
-            /* Free tz0, in case this is the 2nd or subsequent time through. */
-            free (tz0);
             tz0 = get_tz (tz0buf);
             z = tz1 = large_tz ? xmalloc (tzsize) : tz1buf;
             for (s = tzbase; *s != '"'; s++)
@@ -3297,7 +3218,12 @@ parse_datetime (struct timespec *result, char const *p,
             if (!setenv_ok)
               goto fail;
             tz_was_altered = true;
+
             p = s + 1;
+            while (c = *p, c_isspace (c))
+              p++;
+
+            break;
           }
     }
 
@@ -3453,7 +3379,7 @@ parse_datetime (struct timespec *result, char const *p,
                           + sizeof pc.time_zone * CHAR_BIT / 3];
               if (!tz_was_altered)
                 tz0 = get_tz (tz0buf);
-              sprintf (tz1buf, "XXX%s%ld:%02d", "-" + (time_zone < 0),
+              sprintf (tz1buf, "XXX%s%ld:%02d", &"-"[time_zone < 0],
                        abs_time_zone_hour, abs_time_zone_min);
               if (setenv ("TZ", tz1buf, 1) != 0)
                 goto fail;
@@ -3602,4 +3528,3 @@ main (int ac, char **av)
   return 0;
 }
 #endif /* TEST */
-
