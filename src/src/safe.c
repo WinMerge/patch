@@ -48,6 +48,10 @@
 
 static const unsigned int MAX_PATH_COMPONENTS = 1024;
 
+/* Flag to turn the safe_* functions into their unsafe variants; files may then
+   lie outside the current working directory. */
+bool unsafe;
+
 /* Path lookup results are cached in a hash table + LRU list. When the
    cache is full, the oldest entries are removed.  */
 
@@ -239,6 +243,7 @@ out:
   return entry;
 }
 
+_GL_ATTRIBUTE_PURE
 static unsigned int count_path_components (const char *path)
 {
   unsigned int components;
@@ -261,7 +266,6 @@ static unsigned int count_path_components (const char *path)
 struct symlink {
   struct symlink *prev;
   const char *path;
-  char buffer[0];
 };
 
 static void push_symlink (struct symlink **stack, struct symlink *symlink)
@@ -285,6 +289,7 @@ static struct symlink *read_symlink(int dirfd, const char *name)
   int saved_errno = errno;
   struct stat st;
   struct symlink *symlink;
+  char *buffer;
   ssize_t ret;
 
   if (fstatat (dirfd, name, &st, AT_SYMLINK_NOFOLLOW)
@@ -294,12 +299,13 @@ static struct symlink *read_symlink(int dirfd, const char *name)
       return NULL;
     }
   symlink = xmalloc (sizeof (*symlink) + st.st_size + 1);
-  ret = readlinkat (dirfd, name, symlink->buffer, st.st_size);
+  buffer = (char *)(symlink + 1);
+  ret = readlinkat (dirfd, name, buffer, st.st_size);
   if (ret <= 0)
     goto fail;
-  symlink->buffer[ret] = 0;
-  symlink->path = symlink->buffer;
-  if (ISSLASH (*symlink->path))
+  buffer[ret] = 0;
+  symlink->path = buffer;
+  if (ISSLASH (*buffer))
     {
       char *end;
 
@@ -309,7 +315,7 @@ static struct symlink *read_symlink(int dirfd, const char *name)
 	  if (cwd_stat_errno)
 	    goto fail_exdev;
 	}
-      end = symlink->buffer + ret;
+      end = buffer + ret;
       for (;;)
 	{
 	  char slash;
@@ -542,6 +548,9 @@ static int safe_xstat (const char *pathname, struct stat *buf, int flags)
 {
   int dirfd;
 
+  if (unsafe)
+    return fstatat (AT_FDCWD, pathname, buf, flags);
+
   dirfd = traverse_path (&pathname);
   if (dirfd < 0 && dirfd != AT_FDCWD)
     return dirfd;
@@ -565,6 +574,9 @@ int safe_open (const char *pathname, int flags, mode_t mode)
 {
   int dirfd;
 
+  if (unsafe)
+    return open (pathname, flags, mode);
+
   dirfd = traverse_path (&pathname);
   if (dirfd < 0 && dirfd != AT_FDCWD)
     return dirfd;
@@ -576,6 +588,9 @@ int safe_rename (const char *oldpath, const char *newpath)
 {
   int olddirfd, newdirfd;
   int ret;
+
+  if (unsafe)
+    return rename (oldpath, newpath);
 
   olddirfd = traverse_path (&oldpath);
   if (olddirfd < 0 && olddirfd != AT_FDCWD)
@@ -599,6 +614,9 @@ int safe_mkdir (const char *pathname, mode_t mode)
 {
   int dirfd;
 
+  if (unsafe)
+    return mkdir (pathname, mode);
+
   dirfd = traverse_path (&pathname);
   if (dirfd < 0 && dirfd != AT_FDCWD)
     return dirfd;
@@ -610,6 +628,9 @@ int safe_rmdir (const char *pathname)
 {
   int dirfd;
   int ret;
+
+  if (unsafe)
+    return rmdir (pathname);
 
   dirfd = traverse_path (&pathname);
   if (dirfd < 0 && dirfd != AT_FDCWD)
@@ -626,6 +647,9 @@ int safe_unlink (const char *pathname)
 {
   int dirfd;
 
+  if (unsafe)
+    return unlink (pathname);
+
   dirfd = traverse_path (&pathname);
   if (dirfd < 0 && dirfd != AT_FDCWD)
     return dirfd;
@@ -636,6 +660,9 @@ int safe_unlink (const char *pathname)
 int safe_symlink (const char *target, const char *linkpath)
 {
   int dirfd;
+
+  if (unsafe)
+    return symlink (target, linkpath);
 
   dirfd = traverse_path (&linkpath);
   if (dirfd < 0 && dirfd != AT_FDCWD)
@@ -648,6 +675,9 @@ int safe_chmod (const char *pathname, mode_t mode)
 {
   int dirfd;
 
+  if (unsafe)
+    return chmod (pathname, mode);
+
   dirfd = traverse_path (&pathname);
   if (dirfd < 0 && dirfd != AT_FDCWD)
     return dirfd;
@@ -658,6 +688,9 @@ int safe_chmod (const char *pathname, mode_t mode)
 int safe_lchown (const char *pathname, uid_t owner, gid_t group)
 {
   int dirfd;
+
+  if (unsafe)
+    return lchown (pathname, owner, group);
 
   dirfd = traverse_path (&pathname);
   if (dirfd < 0 && dirfd != AT_FDCWD)
@@ -670,6 +703,9 @@ int safe_lutimens (const char *pathname, struct timespec const times[2])
 {
   int dirfd;
 
+  if (unsafe)
+    return utimensat (AT_FDCWD, pathname, times, AT_SYMLINK_NOFOLLOW);
+
   dirfd = traverse_path (&pathname);
   if (dirfd < 0 && dirfd != AT_FDCWD)
     return dirfd;
@@ -681,6 +717,9 @@ ssize_t safe_readlink (const char *pathname, char *buf, size_t bufsiz)
 {
   int dirfd;
 
+  if (unsafe)
+    return readlink (pathname, buf, bufsiz);
+
   dirfd = traverse_path (&pathname);
   if (dirfd < 0 && dirfd != AT_FDCWD)
     return dirfd;
@@ -691,6 +730,9 @@ ssize_t safe_readlink (const char *pathname, char *buf, size_t bufsiz)
 int safe_access (const char *pathname, int mode)
 {
   int dirfd;
+
+  if (unsafe)
+    return access (pathname, mode);
 
   dirfd = traverse_path (&pathname);
   if (dirfd < 0 && dirfd != AT_FDCWD)

@@ -176,6 +176,12 @@ main (int argc, char **argv)
     /* Make sure we clean up in case of disaster.  */
     set_signals (false);
 
+    /* When the file to patch is specified on the command line, allow that file
+       to lie outside the current working tree.  Still doesn't allow to follow
+       symlinks.  */
+    if (inname)
+      unsafe = true;
+
     if (inname && outfile)
       {
 	/* When an input and an output filename is given and the patch is
@@ -235,8 +241,8 @@ main (int argc, char **argv)
 	{
 	  say ("File %s: can't change file type from 0%o to 0%o.\n",
 	       quotearg (inname),
-	       pch_mode (reverse) & S_IFMT,
-	       pch_mode (! reverse) & S_IFMT);
+	       (unsigned int) (pch_mode (reverse) & S_IFMT),
+	       (unsigned int) (pch_mode (! reverse) & S_IFMT));
 	  skip_rest_of_patch = true;
 	  somefailed = true;
 	}
@@ -584,8 +590,12 @@ main (int argc, char **argv)
 			}
 
 		      if (inerrno)
-			set_file_attributes (TMPOUTNAME, attr, NULL, NULL,
-					     mode, &new_time);
+		        {
+			  if (set_mode)
+			    attr |= FA_MODE;
+			  set_file_attributes (TMPOUTNAME, attr, NULL, NULL,
+					       mode, &new_time);
+			}
 		      else
 			{
 			  attr |= FA_IDS | FA_MODE | FA_XATTRS;
@@ -921,7 +931,7 @@ get_some_switches (void)
 		patchname = xstrdup (optarg);
 		break;
 	    case 'l':
-		canonicalize = true;
+		canonicalize_ws = true;
 		break;
 #ifdef ENABLE_MERGE
 	    case 'm':
@@ -1129,7 +1139,7 @@ locate_hunk (lin fuzz)
     lin prefix_fuzz = fuzz + prefix_context - context;
     lin suffix_fuzz = fuzz + suffix_context - context;
     lin max_where = input_lines - (pat_lines - suffix_fuzz) + 1;
-    lin min_where = last_frozen_line + 1 - (prefix_context - prefix_fuzz);
+    lin min_where = last_frozen_line + 1;
     lin max_pos_offset = max_where - first_guess;
     lin max_neg_offset = first_guess - min_where;
     lin max_offset = MAX(max_pos_offset, max_neg_offset);
@@ -1684,7 +1694,7 @@ patch_match (lin base, lin offset, lin prefix_fuzz, lin suffix_fuzz)
 
     for (iline=base+offset+prefix_fuzz; pline <= pat_lines; pline++,iline++) {
 	p = ifetch (iline, offset >= 0, &size);
-	if (canonicalize) {
+	if (canonicalize_ws) {
 	    if (!similar(p, size,
 			 pfetch(pline),
 			 pch_line_len(pline) ))
@@ -1811,9 +1821,9 @@ delete_files (void)
 	    say ("Removing %s %s\n",
 		 S_ISLNK (mode) ? "symbolic link" : "file",
 		 quotearg (file_to_delete->name));
-	    move_file (0, 0, 0, file_to_delete->name, mode,
-		       file_to_delete->backup);
-	    removedirs (file_to_delete->name);
+	  move_file (0, 0, 0, file_to_delete->name, mode,
+		     file_to_delete->backup);
+	  removedirs (file_to_delete->name);
 	}
     }
   gl_list_iterator_free (&iter);
@@ -1960,22 +1970,6 @@ output_files (struct stat const *st)
   gl_list_clear (files_to_output);
 }
 
-static void
-forget_output_files (void)
-{
-  gl_list_iterator_t iter = gl_list_iterator (files_to_output);
-  const void *elt;
-
-  while (gl_list_iterator_next (&iter, &elt, NULL))
-    {
-      const struct file_to_output *file_to_output = elt;
-
-      safe_unlink (file_to_output->from);
-    }
-  gl_list_iterator_free (&iter);
-  gl_list_clear (files_to_output);
-}
-
 /* Fatal exit with cleanup. */
 
 void
@@ -2006,5 +2000,5 @@ cleanup (void)
   remove_if_needed (TMPOUTNAME, &TMPOUTNAME_needs_removal);
   remove_if_needed (TMPPATNAME, &TMPPATNAME_needs_removal);
   remove_if_needed (TMPREJNAME, &TMPREJNAME_needs_removal);
-  forget_output_files ();
+  output_files (NULL);
 }

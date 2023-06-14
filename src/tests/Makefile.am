@@ -22,18 +22,24 @@ TESTS = \
 	bad-filenames \
 	bad-usage \
 	concat-git-diff \
+	context-format \
 	copy-rename \
+	corrupt-patch \
 	corrupt-reject-files \
 	create-delete \
 	create-directory \
 	criss-cross \
 	crlf-handling \
 	dash-o-append \
+	deep-directories \
 	empty-files \
+	false-match \
 	fifo \
+	file-create-modes \
 	file-modes \
 	filename-choice \
 	git-binary-diff \
+	git-cleanup \
 	garbage \
 	global-reject-files \
 	inname \
@@ -54,11 +60,11 @@ TESTS = \
 	remember-reject-files \
 	remove-directories \
 	symlinks \
-	unmodified-files \
-	deep-directories
+	unmodified-files
 
 XFAIL_TESTS = \
-	dash-o-append
+	dash-o-append \
+	context-format
 
 EXTRA_DIST = \
 	$(TESTS) \

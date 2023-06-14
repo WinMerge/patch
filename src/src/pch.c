@@ -170,9 +170,9 @@ static void
 set_hunkmax (void)
 {
     if (!p_line)
-	p_line = (char **) xmalloc (hunkmax * sizeof *p_line);
+	p_line = xmalloc (hunkmax * sizeof *p_line);
     if (!p_len)
-	p_len = (size_t *) xmalloc (hunkmax * sizeof *p_len);
+	p_len = xmalloc (hunkmax * sizeof *p_len);
     if (!p_Char)
 	p_Char = xmalloc (hunkmax * sizeof *p_Char);
 }
@@ -184,8 +184,8 @@ grow_hunkmax (void)
 {
     hunkmax *= 2;
     assert (p_line && p_len && p_Char);
-    if ((p_line = (char **) realloc (p_line, hunkmax * sizeof (*p_line)))
-	&& (p_len = (size_t *) realloc (p_len, hunkmax * sizeof (*p_len)))
+    if ((p_line = realloc (p_line, hunkmax * sizeof (*p_line)))
+	&& (p_len = realloc (p_len, hunkmax * sizeof (*p_len)))
 	&& (p_Char = realloc (p_Char, hunkmax * sizeof (*p_Char))))
       return true;
     if (!using_plan_a)
@@ -622,6 +622,7 @@ intuit_diff_type (bool need_header, mode_t *p_file_type)
 		  p_name[i] = 0;
 		}
 	    p_git_diff = true;
+	    need_header = false;
 	  }
 	else if (p_git_diff && strnEQ (s, "index ", 6))
 	  {
@@ -1409,7 +1410,7 @@ another_hunk (enum diff difftype, bool rev)
 	      change_line:
 		s = buf + 1;
 		chars_read--;
-		if (*s == '\n' && canonicalize) {
+		if (*s == '\n' && canonicalize_ws) {
 		    strcpy (s, " \n");
 		    chars_read = 2;
 		}
@@ -1477,7 +1478,7 @@ another_hunk (enum diff difftype, bool rev)
 	    case ' ':
 		s = buf + 1;
 		chars_read--;
-		if (*s == '\n' && canonicalize) {
+		if (*s == '\n' && canonicalize_ws) {
 		    strcpy (s, "\n");
 		    chars_read = 2;
 		}
@@ -1846,7 +1847,7 @@ another_hunk (enum diff difftype, bool rev)
 	      fatal ("unexpected end of file in patch at line %s",
 		     format_linenum (numbuf0, p_input_line));
 	    if (buf[0] != '<' || (buf[1] != ' ' && buf[1] != '\t'))
-	      fatal ("'<' expected at line %s of patch",
+	      fatal ("'<' followed by space or tab expected at line %s of patch",
 		     format_linenum (numbuf0, p_input_line));
 	    chars_read -= 2 + (i == p_ptrn_lines && incomplete_line ());
 	    p_len[i] = chars_read;
@@ -1891,7 +1892,7 @@ another_hunk (enum diff difftype, bool rev)
 	      fatal ("unexpected end of file in patch at line %s",
 		     format_linenum (numbuf0, p_input_line));
 	    if (buf[0] != '>' || (buf[1] != ' ' && buf[1] != '\t'))
-	      fatal ("'>' expected at line %s of patch",
+	      fatal ("'>' followed by space or tab expected at line %s of patch",
 		     format_linenum (numbuf0, p_input_line));
 	    chars_read -= 2 + (i == p_end && incomplete_line ());
 	    p_len[i] = chars_read;
@@ -2275,7 +2276,7 @@ pfetch (lin line)
 bool
 pch_write_line (lin line, FILE *file)
 {
-  bool after_newline = p_line[line][p_len[line] - 1] == '\n';
+  bool after_newline = (p_len[line] > 0) && (p_line[line][p_len[line] - 1] == '\n');
   if (! fwrite (p_line[line], sizeof (*p_line[line]), p_len[line], file))
     write_fatal ();
   return after_newline;
