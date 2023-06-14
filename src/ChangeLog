@@ -1,3 +1,166 @@
+2012-09-28  Andreas Gruenbacher  <agruen@linbit.com>
+
+	Version 2.7.1
+
+	build: update gnulib submodule to latest
+
+	Repair 'backup of unmodified file' test
+	tests/create-delete: Repair 'backup of unmodified file' test.
+
+	Use gnulib errno module instead of our own default ENOTSUP fallback
+	* bootstrap.conf (gnulib_modules): Add errno module.
+	* src/common.h: Remove ENOTSUP fallback.
+
+	Trailing whitespace fix
+	* NEWS: Trailing whitespace fix.
+
+2012-09-26  Andreas Gruenbacher  <agruen@linbit.com>
+
+	Improve the previous commit
+	* src/patch.c: Only print the "file is not empty after patch" message when
+	trying to delete the output file.  Say that we were trying to delete the file.
+	* tests/create-delete: Fix the expected messages.  Add test cases for the
+	--remove-empty-files and --posix options.
+	* NEWS: Better describe this change.
+
+2012-09-25  Andreas Gruenbacher  <agruen@linbit.com>
+
+	Only expect files to become empty if the patch says so
+	Test cases based on patches from Dmitry V. Levin <ldv@altlinux.org>.
+	* src/patch.c (main): Only expect files to become empty if the patch says so.
+	* NEWS: Document this change.
+	* tests/create-delete: Add (more) empty vs. non-empty test cases.
+
+2012-09-22  Jim Meyering  <meyering@redhat.com>
+
+	build: avoid gcc warnings from -Wsuggest-attribute=format
+	* configure.ac (WARN_CFLAGS): Disable -Wsuggest-attribute=format,
+	to avoid some warnings that are not worth working around.
+
+2012-09-22  Andreas Gruenbacher  <agruen@linbit.com>
+
+	Update NEWS
+	* NEWS: Update.
+
+	Improve messages when in --dry-run mode
+	* src/patch.c (main): Say that we are checking a file and not that we are
+	patching it in --dry-run mode.  Don't say "saving rejects to file" when we
+	don't create reject files.
+	* tests/reject-format: Add rejects with --dry-run test case.
+	* tests/bad-filenames, tests/fifo, tests/mixed-patch-types: Update.
+
+	Improve handling of LF vs. CRLF line endings
+	* src/patch.c (check_line_endings): New function.
+	(main): When a hunk fails, report when the line endings differ between the
+	input file and the patch.
+	* src/pch.c (there_is_another_patch): When saying that we strip trailing CRs,
+	also say how to turn this off.
+	* tests/crlf-handling: Update changed messages.  Add test case that fails.
+
+	Ignore when preserving extended attributes is not supported or allowed
+	* src/common.h (ENOTSUP): Make sure this error code is defined.
+	* src/util.c (set_file_attributes): Ignore ENOSYS, ENOTSUP, and EPERM errors.
+
+2012-09-20  Andreas Gruenbacher  <agruen@linbit.com>
+
+	Add a missing explanation in the tests/crlf-handling test case
+	* tests/crlf-handling: Add explanation.
+
+2012-09-19  Andreas Gruenbacher  <agruen@linbit.com>
+
+	Add --follow-symlinks option for backwards compatibility
+	* src/common.h (follow_symlinks): New variable.
+	* src/patch.c (longopts): Add new --follow-symlinks option.
+	(get_some_switches): Recognize the new option.
+	* src/util.c (stat_file): Follow symlinks if requested.
+	* patch.man: Document the new option.
+	* tests/symlinks: Add test case.
+
+	Introduce function to lstat all input files
+	* src/util.c (stat_file): New function.
+	(move_file): Use here.
+	* src/util.h (stat_file): Declare here.
+	* src/inp.c (get_input_file): Use here.
+	* src/patch.c (main): Use here.
+	(delete_file_later): Use here.
+	* src/pch.c (there_is_another_patch): Use here.
+	(intuit_diff_type): Use here.
+
+	Use stat where we want to follow symlinks
+	* src/pch.c (prefix_components): Follow symlinks.
+	(cwd_is_root): Follow symlinks.
+
+	Document command-line options in alphabetic order
+	* patch.man: The options are mostly listen in alphabetical order; stick to
+	that.
+
+2012-09-18  Andreas Gruenbacher  <agruen@linbit.com>
+
+	Fix file truncation when switching from git diff to non-git diff
+	* src/patch.c (main): Output queued output files only when switching from a git
+	diff to a non-git diff.  This can modify the input file, so make sure to
+	stat() it again.
+	* tests/concat-git-diff: Add test case growing a file with a git diff and then
+	with a non-git diff; without this fix; the result would be truncated.
+
+	Rename get_input_file() parameter to clarify code
+	* src/inp.c (get_input_file): Rename mode parameter to file_type, it's all we
+	care about here.
+
+	Improve error message when patching a file of different type
+	* src/inp.c (get_input_file): Improve error message when patching a file of
+	different type.
+	* tests/symlinks: Update test case.
+
+	Minor test case updates
+	* tests/dash-o-append: Minor update (still expected to fail).
+	* tests/symlinks: Minor update.
+
+2012-09-17  Andreas Gruenbacher  <agruen@linbit.com>
+
+	Disable xattrs if libattr doesn't implement attr_copy_action()
+	* m4/xattr.m4 (gl_FUNC_XATTR): Only enable USE_XATTR if both attr_copy_file()
+	and attr_copy_action() are defined.
+	* src/util.c (copy_attr_check): No fallback needed if attr_copy_action() is not
+	defined.
+
+	Allow to use potentially dangerous filenames from the root directory
+	* src/pch.c (cwd_is_root): New function to check if we are in the root
+	directory of a filename.
+	(name_is_valid): Allow to use potentially dangerous filenames when the current
+	working directory is the root directory: from there, those names are not
+	any more dangerous than other names.
+	* tests/bad-filenames: New test case.
+
+2012-09-14  Andreas Gruenbacher  <agruen@linbit.com>
+
+	Update leftover license notice in README
+	* README: Change leftover GPLv2 license notice to GPLv3.
+
+	Check if libattr implements attr_copy_action()
+	* m4/xattr.m4 (gl_FUNC_XATTR): Check if attr_copy_action() is defined.
+	* src/util.c: If attr_copy_action() doesn't exist, fall back to the default
+	copy_attr_file() behavior of copying most extended attributes except ACLs.
+
+2012-09-13  Andreas Gruenbacher  <agruen@linbit.com>
+
+	Change the type of *_needs_removal from int to bool
+
+	In a git-style diff, make sure not to unlink the original by accident
+	* src/patch.c (main): Fail if a file is not empty as expected.
+	(output_files): In a git-style diff, make sure not to unlink the original when
+	making a backup of an unmodified file.
+	* tests/create-delete: Fix failed-file-deletion test and add
+	successful-file-deletion test.
+
+	Do not pass file type in mode of open(..., O_CREAT, mode)
+	* src/patch.c (main): Strip file type off of create mode for temporary output
+	files: some systems don't ignore the file type; we want to create a regular
+	file even when patching a symlink.
+
+	Add note on GPLv3 license change in version 2.6
+	* NEWS: Add note.
+
 2012-09-12  Andreas Gruenbacher  <agruen@linbit.com>
 
 	Version 2.7

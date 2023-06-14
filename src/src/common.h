@@ -91,9 +91,9 @@ XTERN char const * TMPINNAME;
 XTERN char const * TMPOUTNAME;
 XTERN char const * TMPPATNAME;
 
-XTERN int TMPINNAME_needs_removal;
-XTERN int TMPOUTNAME_needs_removal;
-XTERN int TMPPATNAME_needs_removal;
+XTERN bool TMPINNAME_needs_removal;
+XTERN bool TMPOUTNAME_needs_removal;
+XTERN bool TMPPATNAME_needs_removal;
 
 #ifdef DEBUGGING
 XTERN int debug;
@@ -111,6 +111,7 @@ XTERN bool canonicalize;
 XTERN int patch_get;
 XTERN bool set_time;
 XTERN bool set_utc;
+XTERN bool follow_symlinks;
 
 enum diff
   {

@@ -138,7 +138,7 @@ open_patch_file (char const *filename)
 	size_t charsread;
 	int fd = make_tempfile (&TMPPATNAME, 'p', NULL, O_RDWR | O_BINARY, 0);
 	FILE *read_pfp = pfp;
-	TMPPATNAME_needs_removal = 1;
+	TMPPATNAME_needs_removal = true;
 	pfp = fdopen (fd, "w+b");
 	if (! pfp)
 	  pfatal ("Can't open stream for file %s", quotearg (TMPPATNAME));
@@ -266,7 +266,7 @@ there_is_another_patch (bool need_header, mode_t *file_type)
 	  say ("(Patch is indented %lu space%s.)\n",
 	       (unsigned long int) p_indent, p_indent==1?"":"s");
 	if (p_strip_trailing_cr)
-	  say ("(Stripping trailing CRs from patch.)\n");
+	  say ("(Stripping trailing CRs from patch; use --binary to disable.)\n");
 	if (! inname)
 	  {
 	    char numbuf[LINENUM_LENGTH_BOUND + 1];
@@ -293,18 +293,16 @@ there_is_another_patch (bool need_header, mode_t *file_type)
 	  {
 	    inname = savebuf (buf, t - buf);
 	    inname[t - buf - 1] = 0;
-	    if (lstat (inname, &instat) == 0)
-	      {
-		inerrno = 0;
-		invc = -1;
-	      }
-	    else
+	    inerrno = stat_file (inname, &instat);
+	    if (inerrno)
 	      {
 		perror (inname);
 		fflush (stderr);
 		free (inname);
 		inname = 0;
 	      }
+	    else
+	      invc = -1;
 	  }
 	if (!inname) {
 	    ask ("Skip this patch? [y] ");
@@ -389,6 +387,29 @@ skip_hex_digits (char const *str)
   return s == str ? NULL : s;
 }
 
+/* Check if we are in the root of a particular filesystem namespace ("/" on
+   UNIX or a particular drive's root on DOS-like systems).  */
+static bool
+cwd_is_root (char const *name)
+{
+  unsigned int prefix_len = FILE_SYSTEM_PREFIX_LEN (name);
+  char root[prefix_len + 2];
+  struct stat st;
+  dev_t root_dev;
+  ino_t root_ino;
+
+  memcpy (root, name, prefix_len);
+  root[prefix_len] = '/';
+  root[prefix_len + 1] = 0;
+  if (stat (root, &st))
+    return false;
+  root_dev = st.st_dev;
+  root_ino = st.st_ino;
+  if (stat (".", &st))
+    return false;
+  return root_dev == st.st_dev && root_ino == st.st_ino;
+}
+
 static bool
 name_is_valid (char const *name)
 {
@@ -419,6 +440,10 @@ name_is_valid (char const *name)
 	while (ISSLASH (*n))
 	  n++;
       }
+
+  /* Allow any filename if we are in the filesystem root.  */
+  if (! is_valid && cwd_is_root (name))
+    is_valid = true;
 
   if (! is_valid)
     {
@@ -887,15 +912,16 @@ intuit_diff_type (bool need_header, mode_t *p_file_type)
 		  if (! stat_errno[i])
 		    st[i] = st[i0];
 		}
-	      else if (lstat (p_name[i], &st[i]) != 0)
-		stat_errno[i] = errno;
-	      else if (lookup_file_id (&st[i]) == DELETE_LATER)
-		stat_errno[i] = ENOENT;
 	      else
 		{
-		  stat_errno[i] = 0;
-		  if (posixly_correct && name_is_valid (p_name[i]))
-		    break;
+		  stat_errno[i] = stat_file (p_name[i], &st[i]);
+		  if (! stat_errno[i])
+		    {
+		      if (lookup_file_id (&st[i]) == DELETE_LATER)
+			stat_errno[i] = ENOENT;
+		      else if (posixly_correct && name_is_valid (p_name[i]))
+			break;
+		    }
 		}
 	      i0 = i;
 	    }
@@ -980,7 +1006,7 @@ intuit_diff_type (bool need_header, mode_t *p_file_type)
       {
 	if (inname)
 	  {
-	    inerrno = lstat (inname, &instat) == 0 ? 0 : errno;
+	    inerrno = stat_file (inname, &instat);
 	    if (inerrno || (instat.st_mode & S_IFMT) == file_type)
 	      maybe_reverse (inname, inerrno, inerrno || instat.st_size == 0);
 	  }
@@ -1015,7 +1041,7 @@ prefix_components (char *filename, bool checkdirs)
 	  if (checkdirs)
 	    {
 	      *f = '\0';
-	      stat_result = lstat (filename, &stat_buf);
+	      stat_result = stat (filename, &stat_buf);
 	      *f = '/';
 	      if (! (stat_result == 0 && S_ISDIR (stat_buf.st_mode)))
 		break;
@@ -2350,7 +2376,7 @@ get_ed_command_letter (char const *line)
 
 void
 do_ed_script (char const *inname, char const *outname,
-	      int *outname_needs_removal, FILE *ofp)
+	      bool *outname_needs_removal, FILE *ofp)
 {
     static char const editor_program[] = EDITOR_PROGRAM;
 
@@ -2361,7 +2387,7 @@ do_ed_script (char const *inname, char const *outname,
     if (! dry_run && ! skip_rest_of_patch) {
 	int exclusive = *outname_needs_removal ? 0 : O_EXCL;
 	assert (! inerrno);
-	*outname_needs_removal = 1;
+	*outname_needs_removal = true;
 	copy_file (inname, outname, 0, exclusive, instat.st_mode, true);
 	sprintf (buf, "%s %s%s", editor_program,
 		 verbosity == VERBOSE ? "" : "- ",

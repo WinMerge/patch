@@ -1,3 +1,20 @@
+Changes in version 2.7.1:
+
+* Two critical bug fixes in the "diff --git" format support.
+* Clarify the message printed when a patch is expected to empty out and delete
+  a file, but the file does not become empty.
+* Various improvements to messages when applying a patch to a file of different
+  type (regular file vs. symlink), when there are line ending differences (LF
+  vs. CRLF), and when in --dry-run mode.
+* When in the root directory, allow file names that are absolute or that
+  contain a component of "..".
+* New --follow-symlinks option to allow to treat symlinks as files: this was
+  patch's behavior before version 2.7.
+* Ignore when extended attributes cannot be preserved because they are
+  unsupported or because permission to set them is denied.
+* License clarifications in NEWS and README.
+* Portability bug fixes.
+
 Changes in version 2.7:
 
 * Patch no longer gets a failed assertion for certain mangled patches.
@@ -80,6 +97,7 @@ Changes in version 2.6:
   particularly with Perforce.)
 * Handle missing timestamps better.
 * Various bug fixes.
+* Switch to GNU General Public License version 3.
 
 Changes in versions 2.5.8 and 2.5.9: bug fixes only.
 

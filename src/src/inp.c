@@ -130,7 +130,7 @@ too_many_lines (char const *filename)
 
 
 bool
-get_input_file (char const *filename, char const *outname, mode_t mode)
+get_input_file (char const *filename, char const *outname, mode_t file_type)
 {
     bool elsewhere = strcmp (filename, outname) != 0;
     char const *cs;
@@ -138,10 +138,10 @@ get_input_file (char const *filename, char const *outname, mode_t mode)
     char *getbuf;
 
     if (inerrno == -1)
-      inerrno = lstat (filename, &instat) == 0 ? 0 : errno;
+      inerrno = stat_file (filename, &instat);
 
     /* Perhaps look for RCS or SCCS versions.  */
-    if (S_ISREG (mode)
+    if (S_ISREG (file_type)
 	&& patch_get
 	&& invc != 0
 	&& (inerrno
@@ -195,12 +195,12 @@ get_input_file (char const *filename, char const *outname, mode_t mode)
 	instat.st_mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH;
 	instat.st_size = 0;
       }
-    else if (! ((S_ISREG (mode) || S_ISLNK (mode))
-	        && (mode & S_IFMT) == (instat.st_mode & S_IFMT)))
+    else if (! ((S_ISREG (file_type) || S_ISLNK (file_type))
+	        && (file_type & S_IFMT) == (instat.st_mode & S_IFMT)))
       {
-	say ("File %s is not a %s -- can't patch\n",
+	say ("File %s is not a %s -- refusing to patch\n",
 	     quotearg (filename),
-	     S_ISLNK (mode) ? "symbolic link" : "regular file");
+	     S_ISLNK (file_type) ? "symbolic link" : "regular file");
 	return false;
       }
     return true;
@@ -356,7 +356,7 @@ plan_b (char const *filename)
     {
       tifd = make_tempfile (&TMPINNAME, 'i', NULL, O_RDWR | O_BINARY,
 			    S_IRUSR | S_IWUSR);
-      TMPINNAME_needs_removal = 1;
+      TMPINNAME_needs_removal = true;
     }
   i = 0;
   len = 0;

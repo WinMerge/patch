@@ -862,6 +862,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/xalloc.h
   lib/xasprintf.c
   lib/xmalloc.c
+  lib/xsize.c
   lib/xsize.h
   lib/xstrndup.c
   lib/xstrndup.h

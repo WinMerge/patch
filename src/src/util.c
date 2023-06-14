@@ -179,10 +179,13 @@ copy_attr_error (struct error_context *ctx, char const *fmt, ...)
   int err = errno;
   va_list ap;
 
-  /* use verror module to print error message */
-  va_start (ap, fmt);
-  verror (0, err, fmt, ap);
-  va_end (ap);
+  if (err != ENOSYS && err != ENOTSUP && err != EPERM)
+    {
+      /* use verror module to print error message */
+      va_start (ap, fmt);
+      verror (0, err, fmt, ap);
+      va_end (ap);
+    }
 }
 
 static char const *
@@ -274,9 +277,9 @@ set_file_attributes (char const *to, enum file_attributes attr,
 		quotearg (to));
     }
   if (attr & FA_XATTRS)
-    if (copy_attr (from, to))
+    if (copy_attr (from, to) != 0
+	&& errno != ENOSYS && errno != ENOTSUP && errno != EPERM)
       fatal_exit (0);
-  /* FIXME: There may be other attributes to preserve.  */
   if (attr & FA_MODE)
     {
 #if 0 && defined HAVE_LCHMOD
@@ -430,14 +433,14 @@ create_backup (char const *to, const struct stat *to_st, bool leave_original)
    Back up TO if BACKUP is true.  */
 
 void
-move_file (char const *from, int *from_needs_removal,
+move_file (char const *from, bool *from_needs_removal,
 	   struct stat const *fromst,
 	   char const *to, mode_t mode, bool backup)
 {
   struct stat to_st;
   int to_errno;
 
-  to_errno = lstat (to, &to_st) == 0 ? 0 : errno;
+  to_errno = stat_file (to, &to_st);
   if (backup)
     create_backup (to, to_errno ? NULL : &to_st, false);
   if (! to_errno)
@@ -525,7 +528,7 @@ move_file (char const *from, int *from_needs_removal,
 	  if ((0 < to_errno
 	       || (to_errno == 0 && to_st.st_nlink <= 1))
 	      && from_needs_removal)
-	    *from_needs_removal = 0;
+	    *from_needs_removal = false;
 	}
     }
   else if (! backup)
@@ -1648,4 +1651,12 @@ make_tempfile (char const **name, char letter, char const *real_name,
       *name = template;
       return fd;
     }
+}
+
+int stat_file (char const *filename, struct stat *st)
+{
+  int (*xstat)(char const *, struct stat *) =
+    follow_symlinks ? stat : lstat;
+
+  return xstat (filename, st) == 0 ? 0 : errno;
 }

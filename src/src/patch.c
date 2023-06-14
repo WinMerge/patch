@@ -38,6 +38,7 @@
 
 static FILE *create_output_file (char const *, int);
 static lin locate_hunk (lin);
+static bool check_line_endings (lin);
 static bool apply_hunk (struct outstate *, lin);
 static bool patch_match (lin, lin, lin, lin);
 static bool spew_output (struct outstate *, struct stat *);
@@ -48,14 +49,14 @@ static void init_output (struct outstate *);
 static FILE *open_outfile (char const *);
 static void init_reject (char const *);
 static void reinitialize_almost_everything (void);
-static void remove_if_needed (char const *, int *);
+static void remove_if_needed (char const *, bool *);
 static void usage (FILE *, int) __attribute__((noreturn));
 
 static void abort_hunk (char const *, bool, bool);
 static void abort_hunk_context (bool, bool);
 static void abort_hunk_unified (bool, bool);
 
-static void output_file (char const *, int *, const struct stat *, char const *,
+static void output_file (char const *, bool *, const struct stat *, char const *,
 			 const struct stat *, mode_t, bool);
 
 static void init_files_to_delete (void);
@@ -95,7 +96,7 @@ static FILE *rejfp;  /* reject file pointer */
 static char const *patchname;
 static char *rejname;
 static char const * TMPREJNAME;
-static int TMPREJNAME_needs_removal;
+static bool TMPREJNAME_needs_removal;
 
 static lin maxfuzz = 2;
 
@@ -196,8 +197,12 @@ main (int argc, char **argv)
 
       if (have_git_diff != pch_git_diff ())
 	{
+	  if (have_git_diff)
+	    {
+	      output_files (NULL);
+	      inerrno = -1;
+	    }
 	  have_git_diff = ! have_git_diff;
-	  output_files (NULL);
 	}
 
       if (TMPREJNAME_needs_removal)
@@ -251,19 +256,19 @@ main (int argc, char **argv)
 	  if (! strcmp (inname, outname))
 	    {
 	      if (inerrno == -1)
-		inerrno = lstat (inname, &instat) ? errno : 0;
+		inerrno = stat_file (inname, &instat);
 	      outstat = instat;
 	      outerrno = inerrno;
 	    }
 	  else
-	    outerrno = lstat (outname, &outstat) ? errno : 0;
+	    outerrno = stat_file (outname, &outstat);
 
 	  if (! outerrno)
 	    {
 	      if (has_queued_output (&outstat))
 		{
 		  output_files (&outstat);
-		  outerrno = lstat (outname, &outstat) ? errno : 0;
+		  outerrno = stat_file (outname, &outstat);
 		  inerrno = -1;
 		}
 	      if (! outerrno)
@@ -297,8 +302,9 @@ main (int argc, char **argv)
 
       tmpoutst.st_size = -1;
       outfd = make_tempfile (&TMPOUTNAME, 'o', outname,
-			     O_WRONLY | binary_transput, instat.st_mode);
-      TMPOUTNAME_needs_removal = 1;
+			     O_WRONLY | binary_transput,
+			     instat.st_mode & S_IRWXUGO);
+      TMPOUTNAME_needs_removal = true;
       if (diff_type == ED_DIFF) {
 	outstate.zero_output = false;
 	somefailed |= skip_rest_of_patch;
@@ -339,7 +345,8 @@ main (int argc, char **argv)
 	      {
 		bool renamed = strcmp (inname, outname);
 
-		say ("patching %s %s%c",
+		say ("%s %s %s%c",
+		     dry_run ? "checking" : "patching",
 		     S_ISLNK (file_type) ? "symbolic link" : "file",
 		     quotearg (outname), renamed ? ' ' : '\n');
 		if (renamed)
@@ -440,9 +447,11 @@ main (int argc, char **argv)
 		failed++;
 		if (verbosity == VERBOSE ||
 		    (! skip_rest_of_patch && verbosity != SILENT))
-		  say ("Hunk #%d %s at %s.\n", hunk,
+		  say ("Hunk #%d %s at %s%s.\n", hunk,
 		       skip_rest_of_patch ? "ignored" : "FAILED",
-		       format_linenum (numbuf, newwhere));
+		       format_linenum (numbuf, newwhere),
+		       ! skip_rest_of_patch && check_line_endings (newwhere)
+			 ?  " (different line endings)" : "");
 	      }
 	    else if (! merge &&
 		     (verbosity == VERBOSE
@@ -503,12 +512,14 @@ main (int argc, char **argv)
 	  else
 	    {
 	      if (! outstate.zero_output
-		  && pch_says_nonexistent (! reverse)
+		  && pch_says_nonexistent (! reverse) == 2
+		  && (remove_empty_files || ! posixly_correct)
 		  && ! (merge && somefailed))
 		{
 		  mismatch = true;
+		  somefailed = true;
 		  if (verbosity != SILENT)
-		    say ("File %s is not empty after patch, as expected\n",
+		    say ("File %s is not empty after patch; not deleting\n",
 			 quotearg (outname));
 		}
 
@@ -593,9 +604,9 @@ main (int argc, char **argv)
 		      rej[len - 1] = '#';
 		    simple_backup_suffix = s;
 		}
-		say (" -- saving rejects to file %s\n", quotearg (rej));
 		if (! dry_run)
 		  {
+		    say (" -- saving rejects to file %s\n", quotearg (rej));
 		    if (rejname)
 		      {
 			if (! written_to_rejname)
@@ -612,7 +623,7 @@ main (int argc, char **argv)
 			struct stat oldst;
 			int olderrno;
 
-			olderrno = lstat (rej, &oldst) ? errno : 0;
+			olderrno = stat_file (rej, &oldst);
 			if (olderrno && olderrno != ENOENT)
 			  write_fatal ();
 		        if (! olderrno && lookup_file_id (&oldst) == CREATED)
@@ -622,6 +633,8 @@ main (int argc, char **argv)
 				     &rejst, rej, S_IFREG | 0666, false);
 		      }
 		  }
+		else
+		  say ("\n");
 		if (!rejname)
 		    free (rej);
 	    } else
@@ -720,6 +733,7 @@ static struct option const longopts[] =
   {"quoting-style", required_argument, NULL, CHAR_MAX + 8},
   {"reject-format", required_argument, NULL, CHAR_MAX + 9},
   {"read-only", required_argument, NULL, CHAR_MAX + 10},
+  {"follow-symlinks", no_argument, NULL, CHAR_MAX + 11},
   {NULL, no_argument, NULL, 0}
 };
 
@@ -1010,6 +1024,9 @@ get_some_switches (void)
 		  read_only_behavior = RO_FAIL;
 		else
 		  usage (stderr, 2);
+		break;
+	    case CHAR_MAX + 11:
+		follow_symlinks = true;
 		break;
 	    default:
 		usage (stderr, 2);
@@ -1556,7 +1573,7 @@ init_reject (char const *outname)
   int fd;
   fd = make_tempfile (&TMPREJNAME, 'r', outname, O_WRONLY | binary_transput,
 		      0666);
-  TMPREJNAME_needs_removal = 1;
+  TMPREJNAME_needs_removal = true;
   rejfp = fdopen (fd, binary_transput ? "wb" : "w");
   if (! rejfp)
     pfatal ("Can't open stream for file %s", quotearg (TMPREJNAME));
@@ -1649,6 +1666,33 @@ patch_match (lin base, lin offset, lin prefix_fuzz, lin suffix_fuzz)
     return true;
 }
 
+/* Check if the line endings in the input file and in the patch differ. */
+
+static bool
+check_line_endings (lin where)
+{
+  char const *p;
+  size_t size;
+  bool input_crlf, patch_crlf;
+
+  p = pfetch (1);
+  size = pch_line_len (1);
+  if (! size)
+    return false;
+  patch_crlf = size >= 2 && p[size - 2] == '\r' && p[size - 1] == '\n';
+
+  if (! input_lines)
+    return false;
+  if (where > input_lines)
+    where = input_lines;
+  p = ifetch (where, false, &size);
+  if (! size)
+    return false;
+  input_crlf = size >= 2 && p[size - 2] == '\r' && p[size - 1] == '\n';
+
+  return patch_crlf != input_crlf;
+}
+
 /* Do two lines match with canonicalized white space? */
 
 bool
@@ -1705,7 +1749,7 @@ delete_file_later (const char *name, const struct stat *st, bool backup)
 
   if (! st)
     {
-      if (lstat (name, &st_tmp) != 0)
+      if (stat_file (name, &st_tmp) != 0)
 	pfatal ("Can't get file attributes of %s %s", "file", name);
       st = &st_tmp;
     }
@@ -1757,7 +1801,7 @@ struct file_to_output {
 static gl_list_t files_to_output;
 
 static void
-output_file_later (char const *from, int *from_needs_removal, const struct stat *from_st,
+output_file_later (char const *from, bool *from_needs_removal, const struct stat *from_st,
 		   char const *to, mode_t mode, bool backup)
 {
   struct file_to_output *file_to_output;
@@ -1770,11 +1814,11 @@ output_file_later (char const *from, int *from_needs_removal, const struct stat 
   file_to_output->backup = backup;
   gl_list_add_last (files_to_output, file_to_output);
   if (from_needs_removal)
-    *from_needs_removal = 0;
+    *from_needs_removal = false;
 }
 
 static void
-output_file_now (char const *from, int *from_needs_removal,
+output_file_now (char const *from, bool *from_needs_removal,
 		 const struct stat *from_st, char const *to,
 		 mode_t mode, bool backup)
 {
@@ -1791,7 +1835,7 @@ output_file_now (char const *from, int *from_needs_removal,
 }
 
 static void
-output_file (char const *from, int *from_needs_removal,
+output_file (char const *from, bool *from_needs_removal,
 	     const struct stat *from_st, char const *to,
 	     const struct stat *to_st, mode_t mode, bool backup)
 {
@@ -1858,13 +1902,13 @@ output_files (struct stat const *st)
   while (gl_list_iterator_next (&iter, &elt, NULL))
     {
       const struct file_to_output *file_to_output = elt;
-      int from_needs_removal = 1;
+      bool from_needs_removal = true;
       struct stat const *from_st = &file_to_output->from_st;
 
       output_file_now (file_to_output->from, &from_needs_removal,
 		       from_st, file_to_output->to,
 		       file_to_output->mode, file_to_output->backup);
-      if (from_needs_removal)
+      if (file_to_output->to && from_needs_removal)
 	unlink (file_to_output->from);
 
       if (st && st->st_dev == from_st->st_dev && st->st_ino == from_st->st_ino)
@@ -1915,12 +1959,12 @@ fatal_exit (int sig)
 }
 
 static void
-remove_if_needed (char const *name, int *needs_removal)
+remove_if_needed (char const *name, bool *needs_removal)
 {
   if (*needs_removal)
     {
       unlink (name);
-      *needs_removal = 0;
+      *needs_removal = false;
     }
 }
 

@@ -234,6 +234,9 @@
    */
 #undef HAVE_ALLOCA_H
 
+/* Define to 1 if you have the `attr_copy_action' function. */
+#undef HAVE_ATTR_COPY_ACTION
+
 /* Define to 1 if you have the `attr_copy_file' function. */
 #undef HAVE_ATTR_COPY_FILE
 

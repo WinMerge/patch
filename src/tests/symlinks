@@ -22,23 +22,23 @@ cat > create.diff <<EOF
 EOF
 
 rm -f f l
-echo f > f
+echo one > f
 ncheck 'ln -s f l'
 
 check 'patch < create.diff || echo "Status: $?"' <<EOF
-File l is not a regular file -- can't patch
+File l is not a regular file -- refusing to patch
 1 out of 1 hunk ignored -- saving rejects to file l.rej
 Status: 1
 EOF
 
 check 'cat f' <<EOF
-f
+one
 EOF
 
 # --------------------------------------------------------------
 
 rm -f f l
-echo f > f
+echo one > f
 ncheck 'ln -s f l'
 
 cat > modify.diff <<EOF
@@ -50,14 +50,19 @@ cat > modify.diff <<EOF
 EOF
 
 check 'patch < modify.diff || echo "Status: $?"' <<EOF
-File l is not a regular file -- can't patch
+File l is not a regular file -- refusing to patch
 1 out of 1 hunk ignored -- saving rejects to file l.rej
 Status: 1
 EOF
+
+check 'patch --follow-symlinks < modify.diff || echo "Status: $?"' <<EOF
+patching file l
+EOF
+
 # --------------------------------------------------------------
 
 rm -f f l
-echo f > f
+echo one > f
 ncheck 'ln -s f l'
 
 cat > delete.diff <<EOF
@@ -68,7 +73,7 @@ cat > delete.diff <<EOF
 EOF
 
 check 'patch < delete.diff || echo "Status: $?"' <<EOF
-File l is not a regular file -- can't patch
+File l is not a regular file -- refusing to patch
 1 out of 1 hunk ignored -- saving rejects to file l.rej
 Status: 1
 EOF
