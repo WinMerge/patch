@@ -1,3 +1,23 @@
+2015-01-22  Andreas Gruenbacher  <agruen@gnu.org>
+
+	Fix the fix for CVE-2015-1196
+	* src/util.c (filename_is_safe): New function split off from name_is_valid().
+	(symlink_target_is_valid): Explain why we cannot have absolute symlinks or
+	symlinks with ".." components for now.
+	(move_file): Move absolute filename check here and explain.
+	* tests/symlinks: Put test case with ".." symlink in comments for now.
+	* NEWS: Add CVE number.
+
+2015-01-21  Andreas Gruenbacher  <agruen@gnu.org>
+
+	For renames and copies, make sure that both file names are valid
+	* src/patch.c (main): Allow there_is_another_patch() to set the
+	skip_rest_of_patch flag.
+	* src/pch.c (intuit_diff_type): For renames and copies, also check the "other"
+	file name.
+	(pch_copy, pch_rename): Now that both names are checked in intuit_diff_type(),
+	we know they are defined here.
+
 2015-01-20  Andreas Gruenbacher  <agruen@gnu.org>
 
 	Fail when out of memory in set_hunkmax()

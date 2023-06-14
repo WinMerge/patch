@@ -401,21 +401,7 @@ name_is_valid (char const *name)
 	return false;
     }
 
-  if (IS_ABSOLUTE_FILE_NAME (name))
-    is_valid = false;
-  else
-    for (n = name; *n; )
-      {
-	if (*n == '.' && *++n == '.' && ( ! *++n || ISSLASH (*n)))
-	  {
-	    is_valid = false;
-	    break;
-	  }
-	while (*n && ! ISSLASH (*n))
-	  n++;
-	while (ISSLASH (*n))
-	  n++;
-      }
+  is_valid = filename_is_safe (name);
 
   /* Allow any filename if we are in the filesystem root.  */
   if (! is_valid && cwd_is_root (name))
@@ -976,6 +962,16 @@ intuit_diff_type (bool need_header, mode_t *p_file_type)
 		i = best_name (p_name, distance_from_minimum);
 	      }
 	  }
+      }
+
+    if ((pch_rename () || pch_copy ())
+	&& ! inname
+	&& ! ((i == OLD || i == NEW) &&
+	      p_name[! reverse] &&
+	      name_is_valid (p_name[! reverse])))
+      {
+	say ("Cannot %s file without two valid file names\n", pch_rename () ? "rename" : "copy");
+	skip_rest_of_patch = true;
       }
 
     if (i == NONE)
@@ -2178,14 +2174,12 @@ pch_name (enum nametype type)
 
 bool pch_copy (void)
 {
-  return p_copy[OLD] && p_copy[NEW]
-	 && p_name[OLD] && p_name[NEW];
+  return p_copy[OLD] && p_copy[NEW];
 }
 
 bool pch_rename (void)
 {
-  return p_rename[OLD] && p_rename[NEW]
-	 && p_name[OLD] && p_name[NEW];
+  return p_rename[OLD] && p_rename[NEW];
 }
 
 /* Return the specified line position in the old file of the old context. */
